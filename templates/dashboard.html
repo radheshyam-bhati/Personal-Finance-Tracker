@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Personal Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Total Income</p>
+                <p class="text-3xl font-bold text-primary-600 mt-1">${{ "{:,.2f}".format(summary.total_income) }}</p>
+            </div>
+            <div class="bg-primary-50 p-3 rounded-lg">
+                <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Total Expenses</p>
+                <p class="text-3xl font-bold text-danger-600 mt-1">${{ "{:,.2f}".format(summary.total_expenses) }}</p>
+            </div>
+            <div class="bg-danger-50 p-3 rounded-lg">
+                <svg class="w-6 h-6 text-danger-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Net Savings</p>
+                <p class="text-3xl font-bold {% if summary.net_savings >= 0 %}text-primary-600{% else %}text-danger-600{% endif %} mt-1">${{ "{:,.2f}".format(summary.net_savings) }}</p>
+            </div>
+            <div class="bg-blue-50 p-3 rounded-lg">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Transactions</p>
+                <p class="text-3xl font-bold text-gray-700 mt-1">{{ summary.transaction_count }}</p>
+            </div>
+            <div class="bg-gray-100 p-3 rounded-lg">
+                <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Monthly Trends</h2>
+        <canvas id="monthlyChart" height="300"></canvas>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Expense Breakdown</h2>
+        <canvas id="categoryChart" height="300"></canvas>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Saving Opportunities</h2>
+        {% if saving_opportunities %}
+            <div class="space-y-4">
+                {% for opp in saving_opportunities %}
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-medium text-gray-900">{{ opp.category }}</h3>
+                        <span class="text-sm font-semibold {% if opp.percentage > 30 %}text-danger-600{% else %}text-primary-600{% endif %}">{{ opp.percentage }}%</span>
+                    </div>
+                    <p class="text-sm text-gray-600">${{ "{:,.2f}".format(opp.amount) }} spent</p>
+                    <p class="text-sm text-gray-500 mt-2">{{ opp.suggestion }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-500 text-center py-8">Add more transactions to see saving opportunities</p>
+        {% endif %}
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h2>
+        {% if recent_transactions %}
+            <div class="space-y-3">
+                {% for t in recent_transactions %}
+                <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center {% if t.type == 'income' %}bg-primary-100 text-primary-600{% else %}bg-danger-100 text-danger-600{% endif %}">
+                            {% if t.type == 'income' %}
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            {% else %}
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">{{ t.description or t.category }}</p>
+                            <p class="text-sm text-gray-500">{{ t.category }} • {{ t.date }}</p>
+                        </div>
+                    </div>
+                    <span class="font-semibold {% if t.type == 'income' %}text-primary-600{% else %}text-danger-600{% endif %}">
+                        {% if t.type == 'income' %}+{% else %}-{% endif %}${{ "{:,.2f}".format(t.amount) }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-500 text-center py-8">No transactions yet. <a href="{{ url_for('add_transaction') }}" class="text-primary-600 hover:underline">Add your first transaction</a></p>
+        {% endif %}
+        <div class="mt-4 text-center">
+            <a href="{{ url_for('view_transactions') }}" class="text-primary-600 hover:underline text-sm font-medium">View all transactions →</a>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Category Breakdown</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div>
+            <h3 class="text-sm font-medium text-gray-500 mb-3">Income</h3>
+            {% if category_breakdown.income %}
+                <div class="space-y-2">
+                    {% for cat in category_breakdown.income %}
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">{{ cat.category }}</span>
+                        <span class="font-medium text-primary-600">${{ "{:,.2f}".format(cat.amount) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-400 text-sm">No income recorded</p>
+            {% endif %}
+        </div>
+        <div class="md:col-span-3">
+            <h3 class="text-sm font-medium text-gray-500 mb-3">Expenses</h3>
+            {% if category_breakdown.expense %}
+                <div class="space-y-2">
+                    {% for cat in category_breakdown.expense %}
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600">{{ cat.category }}</span>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-32 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-danger-500" style="width: {{ (cat.amount / (summary.total_expenses or 1)) * 100 }}%"></div>
+                            </div>
+                            <span class="font-medium text-danger-600 w-20 text-right">${{ "{:,.2f}".format(cat.amount) }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-400 text-sm">No expenses recorded</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const monthlyData = {{ monthly_trends | tojson }};
+const categoryData = {{ category_breakdown | tojson }};
+
+new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+        labels: monthlyData.map(m => m.month),
+        datasets: [
+            { label: 'Income', data: monthlyData.map(m => m.income), backgroundColor: '#22c55e', borderRadius: 4 },
+            { label: 'Expenses', data: monthlyData.map(m => m.expenses), backgroundColor: '#ef4444', borderRadius: 4 },
+            { label: 'Net', data: monthlyData.map(m => m.net), type: 'line', borderColor: '#3b82f6', backgroundColor: 'transparent', tension: 0.3, fill: false, pointRadius: 4 }
+        ]
+    },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v } } } }
+});
+
+new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+        labels: categoryData.expense.map(c => c.category),
+        datasets: [{ data: categoryData.expense.map(c => c.amount), backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b'], borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true } } }, cutout: '60%' }
+});
+</script>
+{% endblock %}
