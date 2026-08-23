@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 class="page-title">Dashboard</h1>
+        <div class="flex items-center space-x-3">
+            <a href="{{ url_for('transactions.add') }}" class="btn-primary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Add Transaction
+            </a>
+        </div>
+    </header>
+
+    <div class="card border-0 bg-gradient-to-r from-ledger-green to-ledger-green-dark text-paper rounded-xl p-8" role="region" aria-label="Summary">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div>
+                <p class="stat-label">Total Income</p>
+                <p class="font-mono text-monetary-lg font-medium">${{ "{:,.2f}".format(summary.total_income) }}</p>
+            </div>
+            <div>
+                <p class="stat-label">Total Expenses</p>
+                <p class="font-mono text-monetary-lg font-medium">${{ "{:,.2f}".format(summary.total_expenses) }}</p>
+            </div>
+            <div>
+                <p class="stat-label">Net Savings</p>
+                <p class="font-mono text-monetary-lg font-medium {% if summary.net_savings >= 0 %}text-brass{% else %}text-red-200{% endif %}">${{ "{:,.2f}".format(summary.net_savings) }}</p>
+            </div>
+        </div>
+        <div class="mt-6 pt-6 border-t border-white/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center space-x-6">
+                <div>
+                    <p class="font-ui text-body-sm text-white/80">Savings Rate</p>
+                    <p class="font-mono text-monetary-lg font-medium text-brass">{{ savings_rate }}%</p>
+                </div>
+                <div class="hidden sm:block w-px h-8 bg-white/20"></div>
+                <div>
+                    <p class="font-ui text-body-sm text-white/80">Transactions</p>
+                    <p class="font-mono text-monetary-lg font-medium">{{ summary.transaction_count }}</p>
+                </div>
+            </div>
+            {% if projections %}
+            <div class="flex items-center space-x-6">
+                <div class="text-right">
+                    <p class="font-ui text-body-sm text-white/80">Projected Annual</p>
+                    <p class="font-mono text-monetary-lg font-medium text-brass">${{ "{:,.2f}".format(projections.projected_annual_savings) }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if saving_opportunities %}
+    <section aria-labelledby="insights-heading" class="space-y-4">
+        <h2 id="insights-heading" class="section-title">Saving Opportunities</h2>
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {% for opp in saving_opportunities %}
+            <article class="card hover:border-ledger-green transition-colors">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="font-ui font-medium text-ink">{{ opp.category }}</h3>
+                    <span class="badge {% if opp.percentage > 30 %}bg-brick/10 text-brick{% else %}bg-brass/10 text-brass{% endif %}">{{ opp.percentage }}%</span>
+                </div>
+                <p class="font-mono text-monetary text-brick mb-3">${{ "{:,.2f}".format(opp.amount) }} spent</p>
+                <p class="font-ui text-body-sm text-ink-soft">{{ opp.suggestion }}</p>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <div class="grid gap-6 lg:grid-cols-2">
+        <section class="card" aria-labelledby="monthly-trends-heading">
+            <h2 id="monthly-trends-heading" class="card-title">Monthly Trends</h2>
+            <div class="chart-container">
+                <canvas id="monthlyChart" aria-label="Monthly income, expenses, and net savings trend"></canvas>
+            </div>
+        </section>
+
+        <section class="card" aria-labelledby="category-breakdown-heading">
+            <h2 id="category-breakdown-heading" class="card-title">Expense Breakdown</h2>
+            <div class="chart-container">
+                <canvas id="categoryChart" aria-label="Expense breakdown by category"></canvas>
+            </div>
+        </section>
+    </div>
+
+    {% if goals %}
+    <section class="card" aria-labelledby="goals-heading">
+        <div class="flex items-center justify-between mb-4">
+            <h2 id="goals-heading" class="card-title m-0">Savings Goals</h2>
+            <a href="{{ url_for('goals.index') }}" class="btn-secondary text-sm">View All</a>
+        </div>
+        <div class="space-y-4">
+            {% for goal, progress in goals[:3] %}
+            <article class="bg-stone-light/50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-ui font-medium text-ink">{{ goal.name }}</h3>
+                    <span class="badge {% if progress.on_track %}bg-brass/10 text-brass{% else %}bg-brick/10 text-brick{% endif %}">
+                        {% if progress.on_track %}On Track{% else %}Off Track{% endif %}
+                    </span>
+                </div>
+                <div class="progress-bar mb-2" role="progressbar" aria-valuenow="{{ progress.percentage }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ goal.name }} progress">
+                    <div class="progress-fill {% if progress.on_track %}on-track{% else %}off-track{% endif %}" style="--progress-width: {{ progress.percentage }}%"></div>
+                </div>
+                <div class="flex justify-between text-body-sm text-ink-soft">
+                    <span>${{ "{:,.2f}".format(progress.saved) }} / ${{ "{:,.2f}".format(progress.target) }}</span>
+                    <span>{{ progress.percentage }}% complete</span>
+                </div>
+                {% if not progress.on_track and progress.shortfall > 0 %}
+                <p class="font-ui text-body-sm text-brick mt-2">Projected shortfall: ${{ "{:,.2f}".format(progress.shortfall) }}</p>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="card" aria-labelledby="recent-transactions-heading">
+        <div class="flex items-center justify-between mb-4">
+            <h2 id="recent-transactions-heading" class="card-title m-0">Recent Transactions</h2>
+            <a href="{{ url_for('transactions.index') }}" class="btn-secondary text-sm">View All</a>
+        </div>
+        {% if recent_transactions %}
+        <div class="table-container">
+            <table class="data-table" role="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Category</th>
+                        <th scope="col" class="text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in recent_transactions %}
+                    <tr>
+                        <td class="font-mono text-monetary-sm">{{ t.date.strftime('%b %d, %Y') }}</td>
+                        <td class="font-ui text-body">{{ t.description or t.category.name if t.category else 'Uncategorized' }}</td>
+                        <td>
+                            {% if t.category %}
+                            <span class="badge {% if t.type == 'income' %}badge-income{% else %}badge-expense{% endif %}">{{ t.category.name }}</span>
+                            {% else %}
+                            <span class="badge bg-stone-light text-stone">Uncategorized</span>
+                            {% endif %}
+                        </td>
+                        <td class="amount {% if t.type == 'income' %}positive{% else %}negative{% endif %}">
+                            {% if t.type == 'income' %}+{% else %}-{% endif %}${{ "{:,.2f}".format(t.amount) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <p class="empty-state-text">No transactions yet. Start by adding your first transaction or importing a CSV.</p>
+            <a href="{{ url_for('transactions.add') }}" class="btn-primary inline-block">Add Transaction</a>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const monthlyData = {{ monthly_trends | tojson }};
+const categoryData = {{ category_breakdown | tojson }};
+
+new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+        labels: monthlyData.map(m => m.month),
+        datasets: [
+            { 
+                label: 'Income', 
+                data: monthlyData.map(m => m.income), 
+                backgroundColor: '#1F6F54',
+                borderRadius: 4,
+                maxBarThickness: 40
+            },
+            { 
+                label: 'Expenses', 
+                data: monthlyData.map(m => m.expenses), 
+                backgroundColor: '#B84C3E',
+                borderRadius: 4,
+                maxBarThickness: 40
+            },
+            { 
+                label: 'Net', 
+                data: monthlyData.map(m => m.net), 
+                type: 'line', 
+                borderColor: '#3B82F6', 
+                backgroundColor: 'transparent', 
+                tension: 0.3, 
+                fill: false, 
+                pointRadius: 4,
+                pointBackgroundColor: '#3B82F6',
+                borderWidth: 2
+            }
+        ]
+    },
+    options: { 
+        responsive: true, 
+        maintainAspectRatio: false, 
+        plugins: { 
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { family: 'Inter' } } } 
+        }, 
+        scales: { 
+            y: { 
+                beginAtZero: true, 
+                ticks: { 
+                    callback: v => '$' + v.toLocaleString(),
+                    font: { family: 'IBM Plex Mono' }
+                },
+                grid: { color: '#DADDD5' }
+            },
+            x: { 
+                grid: { display: false },
+                ticks: { font: { family: 'Inter' } }
+            }
+        } 
+    }
+});
+
+new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+        labels: categoryData.expense.map(c => c.category),
+        datasets: [{ 
+            data: categoryData.expense.map(c => c.amount), 
+            backgroundColor: [
+                '#B84C3E', '#C96D4A', '#D98D66', '#EAAE82', '#FBBC9E', 
+                '#1F6F54', '#2A8A6A', '#35A680', '#40C296', '#6DD9B3'
+            ], 
+            borderWidth: 0,
+            borderRadius: 2
+        }]
+    },
+    options: { 
+        responsive: true, 
+        maintainAspectRatio: false, 
+        plugins: { 
+            legend: { 
+                position: 'bottom', 
+                labels: { 
+                    padding: 16, 
+                    usePointStyle: true, 
+                    pointStyle: 'circle',
+                    font: { family: 'Inter', size: 13 }
+                } 
+            } 
+        }, 
+        cutout: '60%' 
+    }
+});
+</script>
+{% endblock %}

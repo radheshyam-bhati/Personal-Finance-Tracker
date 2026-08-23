@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Personal Finance Tracker{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'display': ['Fraunces', 'serif'],
+                        'ui': ['Inter', 'system-ui', 'sans-serif'],
+                        'mono': ['IBM Plex Mono', 'monospace'],
+                    },
+                    colors: {
+                        ink: '#16231F',
+                        paper: '#F1F3ED',
+                        'paper-raised': '#FFFFFF',
+                        'ledger-green': '#1F6F54',
+                        'ledger-green-dark': '#154C39',
+                        brass: '#B8912A',
+                        brick: '#B84C3E',
+                        'brick-dark': '#8F3A2F',
+                        stone: '#8B8F87',
+                        'stone-light': '#DADDD5',
+                        'ink-soft': '#4A554F',
+                    },
+                    spacing: {
+                        '4': '4px', '8': '8px', '16': '16px', '24': '24px', '32': '32px', '48': '48px', '64': '64px',
+                    },
+                    fontSize: {
+                        'display-lg': ['40px', { lineHeight: '1.15', fontWeight: '600' }],
+                        'display-sm': ['28px', { lineHeight: '1.2', fontWeight: '500' }],
+                        'body-lg': ['18px', { lineHeight: '1.5', fontWeight: '400' }],
+                        'body': ['15px', { lineHeight: '1.5', fontWeight: '400' }],
+                        'body-sm': ['13px', { lineHeight: '1.4', fontWeight: '400' }],
+                        'ui-label': ['14px', { lineHeight: '1.3', fontWeight: '500' }],
+                        'monetary-lg': ['36px', { lineHeight: '1.1', fontWeight: '500' }],
+                        'monetary': ['15px', { lineHeight: '1.4', fontWeight: '400' }],
+                        'monetary-sm': ['13px', { lineHeight: '1.3', fontWeight: '400' }],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .font-display { font-family: 'Fraunces', serif; }
+        .font-ui { font-family: 'Inter', system-ui, sans-serif; }
+        .font-mono { font-family: 'IBM Plex Mono', monospace; font-feature-settings: "tnum"; }
+        
+        .btn-primary {
+            @apply bg-ledger-green text-paper font-ui font-medium px-5 py-2.5 rounded-lg h-11 transition-colors duration-120 ease-out;
+        }
+        .btn-primary:hover { @apply bg-ledger-green-dark; }
+        .btn-primary:active { @apply bg-ledger-green-dark scale-[0.98]; }
+        .btn-primary:focus-visible { @apply outline-none ring-2 ring-ledger-green ring-offset-2; }
+        .btn-primary:disabled { @apply bg-stone-light text-stone cursor-not-allowed; }
+        
+        .btn-secondary {
+            @apply bg-transparent border border-stone text-ink font-ui font-medium px-5 py-2.5 rounded-lg h-11 transition-all duration-120 ease-out;
+        }
+        .btn-secondary:hover { @apply border-ink bg-stone-light/40; }
+        .btn-secondary:focus-visible { @apply outline-none ring-2 ring-ink ring-offset-2; }
+        
+        .btn-destructive {
+            @apply bg-brick text-paper font-ui font-medium px-5 py-2.5 rounded-lg h-11 transition-colors duration-120 ease-out;
+        }
+        .btn-destructive:hover { @apply bg-brick-dark; }
+        .btn-destructive:focus-visible { @apply outline-none ring-2 ring-brick ring-offset-2; }
+        
+        .card {
+            @apply bg-paper-raised border border-stone-light rounded-xl p-6;
+        }
+        .card-title {
+            @apply font-ui text-ui-label text-ink-soft uppercase tracking-wide mb-4;
+        }
+        .stat-value-positive { @apply font-mono text-monetary-lg text-ledger-green; }
+        .stat-value-negative { @apply font-mono text-monetary-lg text-brick; }
+        .stat-label { @apply font-ui text-body-sm text-ink-soft mb-1; }
+        
+        .input-field {
+            @apply w-full h-11 px-4 border border-stone bg-paper-raised font-ui text-body text-ink rounded-lg transition-all duration-120;
+        }
+        .input-field:focus {
+            @apply border-ledger-green outline-none ring-2 ring-ledger-green/15;
+        }
+        .input-field.error {
+            @apply border-brick border-2;
+        }
+        .input-field-mono {
+            @apply font-mono;
+        }
+        .label-field { @apply font-ui text-ui-label text-ink-soft mb-1 block; }
+        .error-message { @apply font-ui text-body-sm text-brick mt-1; }
+        
+        .nav-link {
+            @apply font-ui text-ui-label text-stone transition-colors duration-120;
+        }
+        .nav-link:hover { @apply text-paper; }
+        .nav-link.active { @apply text-paper relative after:content-[''] after:absolute after:bottom-[-10px] after:left-0 after:right-0 after:h-[2px] after:bg-ledger-green; }
+        
+        .table-container { @apply overflow-x-auto; }
+        .data-table { @apply w-full border-collapse; }
+        .data-table th {
+            @apply font-ui text-ui-label text-ink-soft uppercase tracking-wide text-left pb-3 border-b border-stone-light;
+        }
+        .data-table td {
+            @apply font-ui text-body py-3 border-b border-stone-light/50;
+        }
+        .data-table td.amount {
+            @apply font-mono text-monetary text-right;
+        }
+        .data-table td.amount.positive { @apply text-ledger-green; }
+        .data-table td.amount.negative { @apply text-brick; }
+        .data-table tbody tr:hover { @apply bg-stone-light/30; }
+        .data-table tbody tr:last-child td { @apply border-b-0; }
+        
+        .badge {
+            @apply inline-flex items-center px-2.5 py-0.5 rounded-full font-ui text-body-sm font-medium;
+        }
+        .badge-income { @apply bg-ledger-green/10 text-ledger-green; }
+        .badge-expense { @apply bg-brick/10 text-brick; }
+        
+        .progress-bar {
+            @apply h-3 bg-stone-light rounded-full overflow-hidden;
+        }
+        .progress-fill {
+            @apply h-full rounded-full transition-all duration-300;
+            width: var(--progress-width, 0%);
+        }
+        .progress-fill.on-track { @apply bg-brass; }
+        .progress-fill.off-track { @apply bg-brick; }
+        
+        .empty-state {
+            @apply text-center py-16;
+        }
+        .empty-state-icon {
+            @apply text-stone text-6xl mb-4;
+        }
+        .empty-state-text {
+            @apply font-ui text-body text-stone mb-6;
+        }
+        
+        @media (max-width: 767px) {
+            .mobile-tab-bar {
+                @apply fixed bottom-0 left-0 right-0 z-50 bg-paper-raised border-t border-stone-light;
+            }
+            .mobile-tab-bar a {
+                @apply flex flex-col items-center justify-center px-3 py-2 text-body-sm font-ui transition-colors duration-120;
+            }
+            .mobile-tab-bar a.active {
+                @apply text-ledger-green;
+            }
+            .mobile-tab-bar a:not(.active) {
+                @apply text-stone;
+            }
+        }
+        
+        .chart-container { position: relative; height: 300px; }
+        
+        .page-title {
+            @apply font-display text-display-sm text-ink mb-8;
+        }
+        .section-title {
+            @apply font-display text-display-sm text-ink mb-6;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-paper font-ui text-ink min-h-screen">
+    {% if current_user.is_authenticated %}
+    <nav class="fixed top-0 left-0 right-0 h-16 bg-ink z-50" role="navigation" aria-label="Main navigation">
+        <div class="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+            <a href="{{ url_for('main.dashboard') }}" class="font-display text-xl text-paper" aria-label="Finance Tracker Home">
+                Finance Tracker
+            </a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">Dashboard</a>
+                <a href="{{ url_for('transactions.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('transactions') %}active{% endif %}">Transactions</a>
+                <a href="{{ url_for('analytics.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('analytics') %}active{% endif %}">Analytics</a>
+                <a href="{{ url_for('goals.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('goals') %}active{% endif %}">Goals</a>
+                <a href="{{ url_for('categorization.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('categorization') %}active{% endif %}">Categories</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="{{ url_for('transactions.add') }}" class="btn-primary text-sm">Add Transaction</a>
+                <div class="relative">
+                    <button id="userMenuBtn" class="flex items-center space-x-2 text-paper font-ui text-body focus:outline-none" aria-expanded="false" aria-haspopup="true">
+                        <span class="hidden sm:block">{{ current_user.email[:20] }}</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-paper-raised border border-stone-light rounded-lg shadow-lg py-2" role="menu">
+                        <a href="{{ url_for('auth.profile') }}" class="block px-4 py-2 font-ui text-body text-ink hover:bg-stone-light" role="menuitem">Profile</a>
+                        <form action="{{ url_for('auth.logout') }}" method="POST" class="block">
+                            <button type="submit" class="w-full text-left px-4 py-2 font-ui text-body text-brick hover:bg-stone-light" role="menuitem">Log Out</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="mobile-tab-bar md:hidden" role="navigation" aria-label="Mobile navigation">
+        <div class="grid grid-cols-5">
+            <a href="{{ url_for('main.dashboard') }}" class="{% if request.endpoint == 'main.dashboard' %}active{% endif %}" aria-current="{% if request.endpoint == 'main.dashboard' %}page{% endif %}">
+                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('transactions.index') }}" class="{% if request.endpoint and request.endpoint.startswith('transactions') %}active{% endif %}" aria-current="{% if request.endpoint and request.endpoint.startswith('transactions') %}page{% endif %}">
+                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                <span>Transactions</span>
+            </a>
+            <a href="{{ url_for('analytics.index') }}" class="{% if request.endpoint and request.endpoint.startswith('analytics') %}active{% endif %}" aria-current="{% if request.endpoint and request.endpoint.startswith('analytics') %}page{% endif %}">
+                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <span>Analytics</span>
+            </a>
+            <a href="{{ url_for('goals.index') }}" class="{% if request.endpoint and request.endpoint.startswith('goals') %}active{% endif %}" aria-current="{% if request.endpoint and request.endpoint.startswith('goals') %}page{% endif %}">
+                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <span>Goals</span>
+            </a>
+            <a href="{{ url_for('categorization.index') }}" class="{% if request.endpoint and request.endpoint.startswith('categorization') %}active{% endif %}" aria-current="{% if request.endpoint and request.endpoint.startswith('categorization') %}page{% endif %}">
+                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                <span>Categories</span>
+            </a>
+        </div>
+    </div>
+    
+    <main class="pt-16 pb-8 md:pb-16" id="main-content">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="md:grid md:grid-cols-12 md:gap-8">
+                <aside class="hidden md:block md:col-span-2">
+                    <nav class="bg-paper-raised border border-stone-light rounded-xl p-4 sticky top-24" aria-label="Sidebar navigation">
+                        <ul class="space-y-1">
+                            <li>
+                                <a href="{{ url_for('main.dashboard') }}" class="flex items-center space-x-3 px-3 py-2 rounded-lg font-ui text-body {% if request.endpoint == 'main.dashboard' %}bg-ledger-green/10 text-ledger-green{% else %}text-ink hover:bg-stone-light{% endif %} transition-colors">
+                                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                                    <span>Dashboard</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url_for('transactions.index') }}" class="flex items-center space-x-3 px-3 py-2 rounded-lg font-ui text-body {% if request.endpoint and request.endpoint.startswith('transactions') %}bg-ledger-green/10 text-ledger-green{% else %}text-ink hover:bg-stone-light{% endif %} transition-colors">
+                                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                    <span>Transactions</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url_for('analytics.index') }}" class="flex items-center space-x-3 px-3 py-2 rounded-lg font-ui text-body {% if request.endpoint and request.endpoint.startswith('analytics') %}bg-ledger-green/10 text-ledger-green{% else %}text-ink hover:bg-stone-light{% endif %} transition-colors">
+                                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                                    <span>Analytics</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url_for('goals.index') }}" class="flex items-center space-x-3 px-3 py-2 rounded-lg font-ui text-body {% if request.endpoint and request.endpoint.startswith('goals') %}bg-ledger-green/10 text-ledger-green{% else %}text-ink hover:bg-stone-light{% endif %} transition-colors">
+                                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                    <span>Goals</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url_for('categorization.index') }}" class="flex items-center space-x-3 px-3 py-2 rounded-lg font-ui text-body {% if request.endpoint and request.endpoint.startswith('categorization') %}bg-ledger-green/10 text-ledger-green{% else %}text-ink hover:bg-stone-light{% endif %} transition-colors">
+                                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                                    <span>Categories</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
+                
+                <div class="md:col-span-10">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            <div class="mb-6 space-y-2" role="alert" aria-live="polite">
+                                {% for category, message in messages %}
+                                    <div class="p-4 rounded-lg flex items-start justify-between {% if category == 'success' %}bg-ledger-green/10 text-ledger-green{% elif category == 'danger' or category == 'error' %}bg-brick/10 text-brick{% elif category == 'warning' %}bg-brass/10 text-brass{% else %}bg-stone-light text-ink{% endif %} border {% if category == 'success' %}border-ledger-green/20{% elif category == 'danger' or category == 'error' %}border-brick/20{% elif category == 'warning' %}border-brass/20{% else %}border-stone-light{% endif %}">
+                                        <div class="flex items-start space-x-3">
+                                            {% if category == 'success' %}
+                                                <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            {% elif category == 'danger' or category == 'error' %}
+                                                <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            {% elif category == 'warning' %}
+                                                <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                            {% else %}
+                                                <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            {% endif %}
+                                            <span class="font-ui text-body">{{ message }}</span>
+                                        </div>
+                                        <button type="button" onclick="this.parentElement.remove()" class="flex-shrink-0 ml-4 text-current opacity-50 hover:opacity-100" aria-label="Dismiss">×</button>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </main>
+    {% else %}
+    <main class="min-h-screen">
+        {% block unauthenticated_content %}{% endblock %}
+    </main>
+    {% endif %}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const userMenuBtn = document.getElementById('userMenuBtn');
+            const userMenu = document.getElementById('userMenu');
+            
+            if (userMenuBtn && userMenu) {
+                userMenuBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userMenu.classList.toggle('hidden');
+                    this.setAttribute('aria-expanded', !userMenu.classList.contains('hidden'));
+                });
+                
+                document.addEventListener('click', function(e) {
+                    if (!userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
+                        userMenu.classList.add('hidden');
+                        userMenuBtn.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+            
+            {% block page_scripts %}{% endblock %}
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

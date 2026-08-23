@@ -3,19 +3,18 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app.auth import auth_bp
 from app import db
 from app.models import User, Category, CategoryRule
-
+from app.forms import LoginForm, SignupForm
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
 
-    if request.method == 'POST':
-        email = request.form.get('email', '').lower().strip()
-        password = request.form.get('password', '')
-        user = User.query.filter_by(email=email).first()
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data.lower().strip()).first()
 
-        if user and user.check_password(password):
+        if user and user.check_password(form.password.data):
             login_user(user, remember=True)
             session.permanent = True
             next_page = request.args.get('next')
@@ -24,7 +23,7 @@ def login():
 
         flash('Invalid email or password.', 'danger')
 
-    return render_template('auth/login.html')
+    return render_template('auth/login.html', form=form)
 
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
@@ -32,29 +31,33 @@ def signup():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
 
-    if request.method == 'POST':
-        email = request.form.get('email', '').lower().strip()
-        password = request.form.get('password', '')
+    form = SignupForm()
+    if form.validate_on_submit():
+        email = form.email.data.lower().strip()
+        password = form.password.data
 
         if User.query.filter_by(email=email).first():
             flash('An account with this email already exists.', 'danger')
-            return render_template('auth/signup.html')
+            return render_template('auth/signup.html', form=form)
 
         user = User(email=email)
         user.set_password(password)
+
         db.session.add(user)
         db.session.flush()
 
         Category.seed_default_categories(user.id)
         CategoryRule.seed_default_rules(user.id)
+
         db.session.commit()
 
         login_user(user, remember=True)
         session.permanent = True
-        flash('Account created! Welcome to Finance Tracker.', 'success')
+
+        flash('Account created successfully! Welcome to Finance Tracker.', 'success')
         return redirect(url_for('main.dashboard'))
 
-    return render_template('auth/signup.html')
+    return render_template('auth/signup.html', form=form)
 
 
 @auth_bp.route('/logout')
@@ -63,3 +66,9 @@ def logout():
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/profile')
+@login_required
+def profile():
+    return render_template('auth/profile.html')

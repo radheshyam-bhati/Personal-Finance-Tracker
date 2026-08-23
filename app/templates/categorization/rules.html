@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Categorization Rules - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 class="page-title">Categorization Rules</h1>
+        <a href="{{ url_for('categorization.create_rule') }}" class="btn-primary">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Create Rule
+        </a>
+    </header>
+
+    <section class="card" aria-labelledby="rules-heading">
+        <h2 id="rules-heading" class="card-title">Auto-Categorization Rules</h2>
+        <p class="font-ui text-body-sm text-ink-soft mb-4">Rules are applied in order. When a transaction description contains the keyword, it will be automatically assigned to the selected category.</p>
+        
+        {% if rules %}
+        <div class="overflow-x-auto">
+            <table class="data-table" role="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Keyword</th>
+                        <th scope="col">Category</th>
+                        <th scope="col"><span class="sr-only">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rule in rules %}
+                    <tr>
+                        <td class="font-mono text-monetary-sm font-medium">{{ rule.keyword }}</td>
+                        <td>
+                            {% if rule.category %}
+                            <span class="badge {% if rule.category.name in ['Salary', 'Freelance', 'Investments', 'Gifts', 'Other Income'] %}badge-income{% else %}badge-expense{% endif %}">{{ rule.category.name }}</span>
+                            {% else %}
+                            <span class="badge bg-stone-light text-stone">Category deleted</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="flex items-center justify-end space-x-2">
+                                <a href="{{ url_for('categorization.edit_rule', rule_id=rule.id) }}" class="p-2 text-ink-soft hover:text-ledger-green hover:bg-stone-light rounded-lg transition-colors" aria-label="Edit rule">✏️</a>
+                                <form action="{{ url_for('categorization.delete_rule', rule_id=rule.id) }}" method="POST" onsubmit="return confirm('Delete this rule?');" class="inline">
+                                    <button type="submit" class="p-2 text-ink-soft hover:text-brick hover:bg-stone-light rounded-lg transition-colors" aria-label="Delete rule">🗑️</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="font-ui text-body text-ink-soft text-center py-8">No rules created yet. Rules help automatically categorize your transactions.</p>
+        {% endif %}
+    </section>
+
+    <div class="card p-6 bg-ledger-green/5 border-ledger-green/20">
+        <h3 class="font-ui font-medium text-ledger-green mb-2">Auto-Categorize Existing Transactions</h3>
+        <p class="font-ui text-body-sm text-ink-soft mb-4">Apply all rules to existing uncategorized transactions.</p>
+        <form action="{{ url_for('categorization.auto_categorize') }}" method="POST">
+            <button type="submit" class="btn-primary">Auto-Categorize All</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Review Uncategorized - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 class="page-title">Review Uncategorized</h1>
+        <form action="{{ url_for('categorization.auto_categorize') }}" method="POST" class="inline">
+            <button type="submit" class="btn-primary">Auto-Categorize All</button>
+        </form>
+    </header>
+
+    {% if transactions %}
+    <section class="card" aria-labelledby="review-heading">
+        <h2 id="review-heading" class="card-title">Uncategorized Transactions ({{ transactions|length }})</h2>
+        <div class="space-y-3">
+            {% for t in transactions %}
+            <article class="bg-stone-light/50 rounded-lg p-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-ui text-body font-medium text-ink truncate">{{ t.description or '—' }}</p>
+                        <div class="flex items-center space-x-4 mt-1 text-body-sm text-ink-soft">
+                            <span class="font-mono text-monetary-sm whitespace-nowrap">{{ t.date.strftime('%b %d, %Y') }}</span>
+                            <span class="badge {% if t.type == 'income' %}badge-income{% else %}badge-expense{% endif %}">{{ t.type.capitalize() }}</span>
+                            <span class="font-mono text-monetary {% if t.type == 'income' %}text-ledger-green{% else %}text-brick{% endif %}">
+                                {% if t.type == 'income' %}+{% else %}-{% endif %}${{ "{:,.2f}".format(t.amount) }}
+                            </span>
+                        </div>
+                    </div>
+                    <form action="{{ url_for('categorization.categorize_transaction', transaction_id=t.id) }}" method="POST" class="flex items-center space-x-2 flex-wrap">
+                        <label for="category_{{ t.id }}" class="sr-only">Select category</label>
+                        <select name="category_id" id="category_{{ t.id }}" class="input-field w-auto min-w-[180px]" required>
+                            <option value="">Select category...</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn-primary text-sm whitespace-nowrap">Categorize</button>
+                    </form>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% else %}
+    <section class="card empty-state">
+        <div class="empty-state-icon">✅</div>
+        <p class="empty-state-text">All transactions are categorized! Great job.</p>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

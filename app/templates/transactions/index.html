@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 class="page-title">Transactions</h1>
+        <div class="flex items-center space-x-3 flex-wrap">
+            <a href="{{ url_for('transactions.add') }}" class="btn-primary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Add Transaction
+            </a>
+            <a href="{{ url_for('transactions.import_csv') }}" class="btn-secondary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Import CSV
+            </a>
+        </div>
+    </header>
+
+    <section class="card" aria-labelledby="filter-heading">
+        <h2 id="filter-heading" class="card-title">Filters</h2>
+        <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div>
+                <label for="type" class="label-field">Type</label>
+                <select name="type" id="type" class="input-field">
+                    <option value="">All Types</option>
+                    <option value="income" {% if form.type.data == 'income' %}selected{% endif %}>Income</option>
+                    <option value="expense" {% if form.type.data == 'expense' %}selected{% endif %}>Expense</option>
+                </select>
+            </div>
+            <div>
+                <label for="category" class="label-field">Category</label>
+                <select name="category" id="category" class="input-field">
+                    <option value="">All Categories</option>
+                    {% for c in form.category.choices %}
+                    {% if c[0] != 0 %}
+                    <option value="{{ c[0] }}" {% if form.category.data == c[0] %}selected{% endif %}>{{ c[1] }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="start_date" class="label-field">From Date</label>
+                <input type="date" name="start_date" id="start_date" value="{{ form.start_date.data.strftime('%Y-%m-%d') if form.start_date.data else '' }}" class="input-field">
+            </div>
+            <div>
+                <label for="end_date" class="label-field">To Date</label>
+                <input type="date" name="end_date" id="end_date" value="{{ form.end_date.data.strftime('%Y-%m-%d') if form.end_date.data else '' }}" class="input-field">
+            </div>
+            <div>
+                <label for="min_amount" class="label-field">Min Amount</label>
+                <input type="number" name="min_amount" id="min_amount" step="0.01" min="0" value="{{ form.min_amount.data or '' }}" class="input-field input-field-mono" placeholder="0.00">
+            </div>
+            <div>
+                <label for="max_amount" class="label-field">Max Amount</label>
+                <input type="number" name="max_amount" id="max_amount" step="0.01" min="0" value="{{ form.max_amount.data or '' }}" class="input-field input-field-mono" placeholder="0.00">
+            </div>
+            <div class="lg:col-span-2">
+                <label for="search" class="label-field">Search Description</label>
+                <input type="text" name="search" id="search" value="{{ form.search.data or '' }}" class="input-field" placeholder="Search transactions...">
+            </div>
+            <div class="lg:col-span-6 flex flex-wrap gap-3">
+                <button type="submit" class="btn-primary">Apply Filters</button>
+                <a href="{{ url_for('transactions.index') }}" class="btn-secondary">Clear</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="card" aria-labelledby="transactions-heading">
+        <h2 id="transactions-heading" class="card-title mb-4">Transactions ({{ pagination.total }})</h2>
+        {% if transactions %}
+        <div class="table-container">
+            <table class="data-table" role="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Type</th>
+                        <th scope="col" class="text-right">Amount</th>
+                        <th scope="col">Source</th>
+                        <th scope="col"><span class="sr-only">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr>
+                        <td class="font-mono text-monetary-sm whitespace-nowrap">{{ t.date.strftime('%b %d, %Y') }}</td>
+                        <td class="font-ui text-body max-w-xs truncate">{{ t.description or '—' }}</td>
+                        <td>
+                            {% if t.category %}
+                            <span class="badge {% if t.type == 'income' %}badge-income{% else %}badge-expense{% endif %}">{{ t.category.name }}</span>
+                            {% else %}
+                            <span class="badge bg-stone-light text-stone">Uncategorized</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {% if t.type == 'income' %}badge-income{% else %}badge-expense{% endif %}">
+                                {{ t.type.capitalize() }}
+                            </span>
+                        </td>
+                        <td class="amount {% if t.type == 'income' %}positive{% else %}negative{% endif %} whitespace-nowrap">
+                            {% if t.type == 'income' %}+{% else %}-{% endif %}${{ "{:,.2f}".format(t.amount) }}
+                        </td>
+                        <td>
+                            <span class="font-ui text-body-sm text-ink-soft capitalize">{{ t.source.replace('_', ' ') }}</span>
+                        </td>
+                        <td>
+                            <div class="flex items-center justify-end space-x-2">
+                                <a href="{{ url_for('transactions.edit', transaction_id=t.id) }}" class="p-2 text-ink-soft hover:text-ledger-green hover:bg-stone-light rounded-lg transition-colors" aria-label="Edit transaction" title="Edit">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                </a>
+                                <form action="{{ url_for('transactions.delete', transaction_id=t.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this transaction?');">
+                                    <button type="submit" class="p-2 text-ink-soft hover:text-brick hover:bg-stone-light rounded-lg transition-colors" aria-label="Delete transaction" title="Delete">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pagination.pages > 1 %}
+        <nav class="mt-6 flex items-center justify-center space-x-2" aria-label="Pagination">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('transactions.index', page=pagination.prev_num, **request.args) }}" class="btn-secondary text-sm" aria-label="Previous page">Previous</a>
+            {% endif %}
+            <span class="font-ui text-body text-ink-soft">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            {% if pagination.has_next %}
+            <a href="{{ url_for('transactions.index', page=pagination.next_num, **request.args) }}" class="btn-secondary text-sm" aria-label="Next page">Next</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p class="empty-state-text">No transactions match your filters.</p>
+            <a href="{{ url_for('transactions.add') }}" class="btn-primary inline-block mt-4">Add Transaction</a>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

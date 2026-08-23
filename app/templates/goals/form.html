@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <header class="mb-8">
+        <h1 class="page-title">{{ title }}</h1>
+    </header>
+
+    <form method="POST" class="card space-y-6" novalidate>
+        {{ form.csrf_token }}
+        
+        <div>
+            <label for="{{ form.name.id }}" class="label-field">Goal Name</label>
+            {{ form.name(class="input-field" + (" error" if form.name.errors else ""), placeholder="e.g., Emergency Fund, Vacation, Down Payment") }}
+            {% if form.name.errors %}
+            <p class="error-message mt-1">{{ form.name.errors[0] }}</p>
+            {% endif %}
+        </div>
+
+        <div>
+            <label for="{{ form.target_amount.id }}" class="label-field">Target Amount ($)</label>
+            {{ form.target_amount(class="input-field input-field-mono" + (" error" if form.target_amount.errors else ""), placeholder="0.00") }}
+            {% if form.target_amount.errors %}
+            <p class="error-message mt-1">{{ form.target_amount.errors[0] }}</p>
+            {% endif %}
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="{{ form.start_date.id }}" class="label-field">Start Date</label>
+                {{ form.start_date(class="input-field" + (" error" if form.start_date.errors else "")) }}
+                {% if form.start_date.errors %}
+                <p class="error-message mt-1">{{ form.start_date.errors[0] }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <label for="{{ form.target_date.id }}" class="label-field">Target Date</label>
+                {{ form.target_date(class="input-field" + (" error" if form.target_date.errors else "")) }}
+                {% if form.target_date.errors %}
+                <p class="error-message mt-1">{{ form.target_date.errors[0] }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-stone-light">
+            <button type="submit" class="btn-primary flex-1 sm:flex-none">Save Goal</button>
+            <a href="{{ url_for('goals.index') }}" class="btn-secondary flex-1 sm:flex-none text-center">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

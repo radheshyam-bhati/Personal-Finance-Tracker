@@ -1,36 +1,25 @@
+# README.md
 # Personal Finance Tracker
 
-A full-stack personal finance management web application built with Flask, SQLAlchemy, and Pandas. Track income and expenses, import bank CSVs, categorize transactions automatically, visualize spending trends, and manage savings goals — all in one place.
-
----
+A web-based personal finance tool built with Python (Flask) and Pandas. Track income, expenses, and spending habits with monthly trends and saving opportunities.
 
 ## Features
 
-- **Transaction Management** — Manual entry and CSV import with duplicate detection
-- **Auto-Categorization** — Keyword-based rules automatically categorize transactions on entry
-- **Dashboard & Analytics** — Monthly trends, category breakdowns, and savings projections powered by Pandas
-- **Savings Goals** — Create goals with target dates and track progress in real time
-- **Audit Log** — Every edit and deletion is recorded for full traceability
-- **Security** — CSRF protection, rate limiting, session hardening, and per-user data isolation
-
----
+- **Transaction Management**: Manual entry and CSV import with duplicate detection
+- **Auto-Categorization**: Rule-based keyword matching with custom rules
+- **Dashboard Analytics**: Monthly trends, category breakdowns, spending patterns
+- **Saving Opportunities**: AI-powered insights on where to save money
+- **Savings Goals**: Track progress toward financial targets
+- **Responsive Design**: Works on desktop, tablet, and mobile
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Backend | Python 3.11+, Flask 3.0 |
-| ORM / DB | SQLAlchemy 3.1, SQLite (dev), PostgreSQL-ready |
-| Migrations | Flask-Migrate (Alembic) |
-| Analytics | Pandas 2.1 |
-| Auth | Flask-Login, Werkzeug password hashing |
-| Forms / CSRF | Flask-WTF |
-| Frontend | Jinja2 templates, Tailwind CSS, Chart.js |
-| Server | Gunicorn (production) |
+- **Backend**: Flask, SQLAlchemy, Pandas
+- **Database**: SQLite (development), PostgreSQL (production ready)
+- **Frontend**: Jinja2 templates, Chart.js, Tailwind CSS
+- **Authentication**: Flask-Login with bcrypt password hashing
 
----
-
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
@@ -39,101 +28,93 @@ A full-stack personal finance management web application built with Flask, SQLAl
 
 ### Installation
 
+1. Clone the repository:
 ```bash
-# 1. Clone the repository
-git clone https://github.com/radheshyam-bhati/Personal-Finance-Tracker.git
-cd Personal-Finance-Tracker
+cd /Users/radheshyambhati/Developer/Personal\ Finance\ Tracker
+```
 
-# 2. Create and activate a virtual environment
+2. Create a virtual environment:
+```bash
 python -m venv venv
-source venv/bin/activate        # macOS/Linux
-# venv\Scripts\activate         # Windows
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-# 3. Install dependencies
+3. Install dependencies:
+```bash
 pip install -r requirements.txt
+```
 
-# 4. Configure environment variables
+4. Set up environment variables:
+```bash
 cp .env.example .env
-# Edit .env and set SECRET_KEY and DATABASE_URL
+# Edit .env with your settings
+```
 
-# 5. Initialize the database
+5. Initialize the database:
+```bash
 flask db upgrade
+```
 
-# 6. Run the development server
+6. Run the application:
+```bash
 flask run
 ```
 
-The app will be available at `http://localhost:5000`.
-
----
-
-## Environment Variables
-
-| Variable | Description | Default |
-|---|---|---|
-| `SECRET_KEY` | Flask session signing key | `dev-secret-key-change-in-production` |
-| `DATABASE_URL` | SQLAlchemy database URI | `sqlite:///finance.db` |
-| `FLASK_ENV` | `development` or `production` | `development` |
-
-> **Never commit a real `SECRET_KEY` to version control.** Use `.env` (git-ignored) or your platform's secrets manager.
-
----
+Visit `http://localhost:5000` in your browser.
 
 ## Project Structure
 
 ```
-Personal-Finance-Tracker/
-├── app/
-│   ├── __init__.py          # Extension initialization
-│   ├── models.py            # SQLAlchemy models
-│   ├── auth/                # Authentication blueprint
-│   ├── main/                # Dashboard & core routes
-│   ├── transactions/        # Transaction CRUD & CSV import
-│   ├── categorization/      # Rule engine
-│   ├── goals/               # Savings goals
-│   ├── analytics/           # Pandas aggregation services
-│   ├── static/              # CSS, JS assets
-│   └── templates/           # Jinja2 HTML templates
-├── migrations/              # Alembic migration scripts
-├── tests/                   # Pytest test suite
-├── analytics.py             # Standalone analytics module
-├── app.py                   # Application entry point
-├── config.py                # Configuration classes
-├── requirements.txt
-└── .env.example
+app/
+├── __init__.py          # Flask app factory
+├── config.py            # Configuration classes
+├── models.py            # SQLAlchemy models
+├── forms.py             # WTForms forms
+├── main/                # Main dashboard routes
+├── auth/                # Authentication routes
+├── transactions/        # Transaction CRUD & import
+├── analytics/           # Analytics & charts
+├── goals/               # Savings goals
+├── categorization/      # Categories & rules
+└── templates/           # Jinja2 templates
 ```
 
----
+## Development
 
-## Running Tests
+### Database Migrations
 
 ```bash
-pytest --cov=app tests/
+# Create a new migration
+flask db migrate -m "Description of changes"
+
+# Apply migrations
+flask db upgrade
 ```
 
----
+### Running Tests
+
+```bash
+pytest
+```
 
 ## Deployment
 
+### Docker
+
 ```bash
-# Production with Gunicorn
-gunicorn -w 2 -b 0.0.0.0:8000 "app:create_app()"
+docker build -t finance-tracker .
+docker run -p 5000:5000 finance-tracker
 ```
 
----
+### Production Checklist
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
----
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md).
-
----
+- Set `FLASK_ENV=production`
+- Generate a strong `SECRET_KEY`
+- Use PostgreSQL: `DATABASE_URL=postgresql://user:pass@host/db`
+- Set `SESSION_COOKIE_SECURE=True`
+- Configure HTTPS/TLS
+- Set up SQLite backup routine
 
 ## License
 
-MIT
+MIT License

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Categories - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 class="page-title">Categories</h1>
+        <a href="{{ url_for('categorization.create_category') }}" class="btn-primary">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Create Category
+        </a>
+    </header>
+
+    <section class="card" aria-labelledby="categories-heading">
+        <h2 id="categories-heading" class="card-title">Your Categories</h2>
+        {% if categories %}
+        <div class="overflow-x-auto">
+            <table class="data-table" role="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">Type</th>
+                        <th scope="col">Default</th>
+                        <th scope="col"><span class="sr-only">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in categories %}
+                    <tr>
+                        <td class="font-ui text-body font-medium">{{ cat.name }}</td>
+                        <td>
+                            {% if cat.name in ['Salary', 'Freelance', 'Investments', 'Gifts', 'Other Income'] %}
+                            <span class="badge badge-income">Income</span>
+                            {% else %}
+                            <span class="badge badge-expense">Expense</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cat.is_default %}
+                            <span class="badge bg-brass/10 text-brass">Yes</span>
+                            {% else %}
+                            <span class="badge bg-stone-light text-stone">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="flex items-center justify-end space-x-2">
+                                {% if not cat.is_default %}
+                                <a href="{{ url_for('categorization.edit_category', category_id=cat.id) }}" class="p-2 text-ink-soft hover:text-ledger-green hover:bg-stone-light rounded-lg transition-colors" aria-label="Edit category">✏️</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="font-ui text-body text-ink-soft text-center py-8">No categories found.</p>
+        {% endif %}
+    </section>
+
+    <div class="flex justify-center space-x-3 mt-6">
+        <a href="{{ url_for('categorization.rules') }}" class="btn-secondary">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+            Manage Rules
+        </a>
+        <a href="{{ url_for('categorization.review') }}" class="btn-secondary">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            Review Uncategorized
+        </a>
+    </div>
+</div>
+{% endblock %}

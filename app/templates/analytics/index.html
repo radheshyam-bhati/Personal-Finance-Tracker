@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 class="page-title">Analytics</h1>
+        <form method="GET" class="flex items-center space-x-3 flex-wrap">
+            <div>
+                <label for="start_date" class="sr-only">Start Date</label>
+                <input type="date" name="start_date" id="start_date" value="{{ start_date.strftime('%Y-%m-%d') if start_date else '' }}" class="input-field w-auto">
+            </div>
+            <span class="font-ui text-body text-ink-soft">to</span>
+            <div>
+                <label for="end_date" class="sr-only">End Date</label>
+                <input type="date" name="end_date" id="end_date" value="{{ end_date.strftime('%Y-%m-%d') if end_date else '' }}" class="input-field w-auto">
+            </div>
+            <button type="submit" class="btn-secondary">Apply</button>
+            <a href="{{ url_for('analytics.index') }}" class="btn-secondary">Reset</a>
+        </form>
+    </header>
+
+    <div class="card border-0 bg-gradient-to-r from-ledger-green to-ledger-green-dark text-paper rounded-xl p-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div>
+                <p class="font-ui text-body-sm text-white/80">Total Income</p>
+                <p class="font-mono text-monetary-lg font-medium">${{ "{:,.2f}".format(summary.total_income) }}</p>
+            </div>
+            <div>
+                <p class="font-ui text-body-sm text-white/80">Total Expenses</p>
+                <p class="font-mono text-monetary-lg font-medium">${{ "{:,.2f}".format(summary.total_expenses) }}</p>
+            </div>
+            <div>
+                <p class="font-ui text-body-sm text-white/80">Net Savings</p>
+                <p class="font-mono text-monetary-lg font-medium {% if summary.net_savings >= 0 %}text-brass{% else %}text-red-200{% endif %}">${{ "{:,.2f}".format(summary.net_savings) }}</p>
+            </div>
+            <div>
+                <p class="font-ui text-body-sm text-white/80">Savings Rate</p>
+                <p class="font-mono text-monetary-lg font-medium text-brass">{{ savings_rate }}%</p>
+            </div>
+        </div>
+    </div>
+
+    {% if saving_opportunities %}
+    <section aria-labelledby="insights-heading" class="space-y-4">
+        <h2 id="insights-heading" class="section-title">Saving Opportunities</h2>
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {% for opp in saving_opportunities %}
+            <article class="card hover:border-ledger-green transition-colors">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="font-ui font-medium text-ink">{{ opp.category }}</h3>
+                    <span class="badge {% if opp.percentage > 30 %}bg-brick/10 text-brick{% else %}bg-brass/10 text-brass{% endif %}">{{ opp.percentage }}%</span>
+                </div>
+                <p class="font-mono text-monetary text-brick mb-3">${{ "{:,.2f}".format(opp.amount) }} spent</p>
+                <p class="font-ui text-body-sm text-ink-soft">{{ opp.suggestion }}</p>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <div class="grid gap-6 lg:grid-cols-2">
+        <section class="card" aria-labelledby="monthly-trends-heading">
+            <h2 id="monthly-trends-heading" class="card-title">Monthly Trends</h2>
+            <div class="chart-container">
+                <canvas id="monthlyChart" aria-label="Monthly income, expenses, and net savings trend"></canvas>
+            </div>
+        </section>
+
+        <section class="card" aria-labelledby="category-breakdown-heading">
+            <h2 id="category-breakdown-heading" class="card-title">Expense Breakdown</h2>
+            <div class="chart-container">
+                <canvas id="categoryChart" aria-label="Expense breakdown by category"></canvas>
+            </div>
+        </section>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+        <section class="card" aria-labelledby="spending-patterns-heading">
+            <h2 id="spending-patterns-heading" class="card-title">Spending Patterns</h2>
+            {% if spending_patterns %}
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-ui font-medium text-ink mb-3">By Day of Week</h3>
+                    <div class="grid grid-cols-7 gap-2">
+                        {% for day, avg in spending_patterns.by_day_of_week.items() %}
+                        <div class="text-center p-3 bg-stone-light/50 rounded-lg">
+                            <p class="font-ui font-medium text-body-sm text-ink">{{ day }}</p>
+                            <p class="font-mono text-monetary text-brick">${{ "{:,.2f}".format(avg) }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-ui font-medium text-ink mb-3">Top Categories</h3>
+                    <div class="space-y-2">
+                        {% for cat, amt in spending_patterns.top_categories.items() %}
+                        <div class="flex justify-between items-center">
+                            <span class="font-ui text-body text-ink">{{ cat }}</span>
+                            <span class="font-mono text-monetary text-brick">${{ "{:,.2f}".format(amt) }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 pt-4 border-t border-stone-light">
+                    <div>
+                        <p class="font-ui text-body-sm text-ink-soft">Avg Transaction</p>
+                        <p class="font-mono text-monetary text-brick">${{ "{:,.2f}".format(spending_patterns.avg_transaction) }}</p>
+                    </div>
+                    <div>
+                        <p class="font-ui text-body-sm text-ink-soft">Median Transaction</p>
+                        <p class="font-mono text-monetary text-brick">${{ "{:,.2f}".format(spending_patterns.median_transaction) }}</p>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <p class="font-ui text-body text-ink-soft text-center py-8">No spending data available for the selected period.</p>
+            {% endif %}
+        </section>
+
+        <section class="card" aria-labelledby="projections-heading">
+            <h2 id="projections-heading" class="card-title">Projections</h2>
+            {% if projections %}
+            <div class="space-y-4">
+                <div class="bg-stone-light/50 rounded-lg p-4">
+                    <h3 class="font-ui font-medium text-ink mb-3">Next Month Projection</h3>
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <p class="font-ui text-body-sm text-ink-soft">Income</p>
+                            <p class="font-mono text-monetary text-ledger-green">${{ "{:,.2f}".format(projections.next_month_income) }}</p>
+                        </div>
+                        <div>
+                            <p class="font-ui text-body-sm text-ink-soft">Expenses</p>
+                            <p class="font-mono text-monetary text-brick">${{ "{:,.2f}".format(projections.next_month_expenses) }}</p>
+                        </div>
+                        <div>
+                            <p class="font-ui text-body-sm text-ink-soft">Net</p>
+                            <p class="font-mono text-monetary {% if projections.next_month_net >= 0 %}text-ledger-green{% else %}text-brick{% endif %}">${{ "{:,.2f}".format(projections.next_month_net) }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-brass/10 border border-brass/20 rounded-lg p-4">
+                    <h3 class="font-ui font-medium text-ink mb-2">Projected Annual Savings</h3>
+                    <p class="font-mono text-monetary-lg font-medium text-brass">${{ "{:,.2f}".format(projections.projected_annual_savings) }}</p>
+                    <p class="font-ui text-body-sm text-ink-soft mt-1">Based on 3-month average</p>
+                </div>
+            </div>
+            {% else %}
+            <p class="font-ui text-body text-ink-soft text-center py-8">Need at least 2 months of data for projections.</p>
+            {% endif %}
+        </section>
+    </div>
+
+    {% if goals %}
+    <section class="card" aria-labelledby="goals-heading">
+        <div class="flex items-center justify-between mb-4">
+            <h2 id="goals-heading" class="card-title m-0">Savings Goals</h2>
+            <a href="{{ url_for('goals.index') }}" class="btn-secondary text-sm">View All</a>
+        </div>
+        <div class="space-y-4">
+            {% for goal, progress in goals %}
+            <article class="bg-stone-light/50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-ui font-medium text-ink">{{ goal.name }}</h3>
+                    <span class="badge {% if progress.on_track %}bg-brass/10 text-brass{% else %}bg-brick/10 text-brick{% endif %}">
+                        {% if progress.on_track %}On Track{% else %}Off Track{% endif %}
+                    </span>
+                </div>
+                <div class="progress-bar mb-2" role="progressbar" aria-valuenow="{{ progress.percentage }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ goal.name }} progress">
+                    <div class="progress-fill {% if progress.on_track %}on-track{% else %}off-track{% endif %}" style="width: {{ progress.percentage }}%"></div>
+                </div>
+                <div class="flex justify-between text-body-sm text-ink-soft">
+                    <span>${{ "{:,.2f}".format(progress.saved) }} / ${{ "{:,.2f}".format(progress.target) }}</span>
+                    <span>{{ progress.percentage }}% complete</span>
+                </div>
+                {% if not progress.on_track and progress.shortfall > 0 %}
+                <p class="font-ui text-body-sm text-brick mt-2">Projected shortfall: ${{ "{:,.2f}".format(progress.shortfall) }}</p>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+{% block scripts %}
+<script>
+const monthlyData = {{ monthly_trends | tojson }};
+const categoryData = {{ category_breakdown | tojson }};
+
+new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+        labels: monthlyData.map(m => m.month),
+        datasets: [
+            { label: 'Income', data: monthlyData.map(m => m.income), backgroundColor: '#1F6F54', borderRadius: 4, maxBarThickness: 40 },
+            { label: 'Expenses', data: monthlyData.map(m => m.expenses), backgroundColor: '#B84C3E', borderRadius: 4, maxBarThickness: 40 },
+            { label: 'Net', data: monthlyData.map(m => m.net), type: 'line', borderColor: '#3B82F6', backgroundColor: 'transparent', tension: 0.3, fill: false, pointRadius: 4, pointBackgroundColor: '#3B82F6', borderWidth: 2 }
+        ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { family: 'Inter' } } } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString(), font: { family: 'IBM Plex Mono' } }, grid: { color: '#DADDD5' } }, x: { grid: { display: false }, ticks: { font: { family: 'Inter' } } } } }
+});
+
+new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+        labels: categoryData.expense.map(c => c.category),
+        datasets: [{ data: categoryData.expense.map(c => c.amount), backgroundColor: ['#B84C3E', '#C96D4A', '#D98D66', '#EAAE82', '#FBBC9E', '#1F6F54', '#2A8A6A', '#35A680', '#40C296', '#6DD9B3'], borderWidth: 0, borderRadius: 2 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyle: 'circle', font: { family: 'Inter', size: 13 } } } }, cutout: '60%' }
+});
+</script>
+{% endblock %}

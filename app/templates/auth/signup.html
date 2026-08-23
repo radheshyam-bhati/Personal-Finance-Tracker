@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Finance Tracker{% endblock %}
+
+{% block unauthenticated_content %}
+<div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md">
+        <div class="text-center mb-10">
+            <a href="{{ url_for('main.dashboard') }}" class="font-display text-3xl text-ink">Finance Tracker</a>
+            <p class="font-ui text-body text-ink-soft mt-2">Create your account to start tracking.</p>
+        </div>
+
+        <div class="card space-y-6">
+            <form method="POST" novalidate>
+                {{ form.csrf_token }}
+                
+                <div>
+                    <label for="{{ form.email.id }}" class="label-field">Email</label>
+                    {{ form.email(class="input-field" + (" error" if form.email.errors else ""), placeholder="you@example.com", autocomplete="email") }}
+                    {% if form.email.errors %}
+                    <p class="error-message mt-1">{{ form.email.errors[0] }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.password.id }}" class="label-field">Password</label>
+                    {{ form.password(class="input-field" + (" error" if form.password.errors else ""), placeholder="••••••••", autocomplete="new-password") }}
+                    {% if form.password.errors %}
+                    <p class="error-message mt-1">{{ form.password.errors[0] }}</p>
+                    {% endif %}
+                    <p class="font-ui text-body-sm text-ink-soft mt-1">At least 8 characters</p>
+                </div>
+
+                <div>
+                    <label for="{{ form.confirm_password.id }}" class="label-field">Confirm Password</label>
+                    {{ form.confirm_password(class="input-field" + (" error" if form.confirm_password.errors else ""), placeholder="••••••••", autocomplete="new-password") }}
+                    {% if form.confirm_password.errors %}
+                    <p class="error-message mt-1">{{ form.confirm_password.errors[0] }}</p>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn-primary w-full mt-2">Create Account</button>
+            </form>
+
+            <div class="relative">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-stone-light"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-4 bg-paper-raised font-ui text-ink-soft">Or</span>
+                </div>
+            </div>
+
+            <p class="font-ui text-body text-center text-ink-soft">
+                Already have an account? 
+                <a href="{{ url_for('auth.login') }}" class="text-ledger-green hover:underline font-medium">Log in</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
