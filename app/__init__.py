@@ -16,6 +16,11 @@ login_manager.login_view = 'auth.login'
 login_manager.login_message = 'Please log in to access this page.'
 login_manager.login_message_category = 'info'
 
+@login_manager.user_loader
+def load_user(user_id):
+    from app.models import User
+    return User.query.get(int(user_id))
+
 def create_app(config_name=None):
     if config_name is None:
         config_name = 'default'
@@ -29,13 +34,6 @@ def create_app(config_name=None):
     csrf.init_app(app)
     
     oauth.init_app(app)
-    oauth.register(
-        name='google',
-        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-        client_kwargs={
-            'scope': 'openid email profile'
-        }
-    )
     
     from app import models
     from app.main import main_bp
@@ -63,8 +61,3 @@ def create_app(config_name=None):
         return {'now': datetime.now()}
     
     return app
-
-@login_manager.user_loader
-def load_user(user_id):
-    from app.models import User
-    return User.query.get(int(user_id))

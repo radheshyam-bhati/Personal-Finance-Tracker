@@ -11,10 +11,14 @@
             <p class="dashboard-subtitle">
                 {% if start_date and end_date %}
                     {{ start_date.strftime('%B %d, %Y') }} – {{ end_date.strftime('%B %d, %Y') }}
+                {% elif start_date %}
+                    {{ start_date.strftime('%B %d, %Y') }}
+                {% elif end_date %}
+                    {{ end_date.strftime('%B %d, %Y') }}
                 {% else %}
-                    {{ "September 2026" if summary.transaction_count > 0 else "September 2026" }}
+                    This month
                 {% endif %}
-                Your financial picture for this month.
+                Your financial picture.
             </p>
         </div>
         <div class="dashboard-header-right">
@@ -140,7 +144,6 @@
                     </div>
                     <div class="goal-metric">
                         <p class="goal-metric-label">Progress</p>
-p>
                         <p class="goal-metric-value">{{ progress.percentage }}%</p>
                     </div>
                     <div class="goal-metric">
@@ -207,6 +210,7 @@ p>
         </div>
         {% endif %}
     </section>
+    {% endif %}
 </div>
 {% endblock %}
 
@@ -758,7 +762,7 @@ monthlyChartInstance = new Chart(document.getElementById('monthlyChart'), {
 
 .transaction-amount {
     font-family: var(--font-mono);
-    font-variant-numeric: tabular-;
+    font-variant-numeric: tabular-nums;
     text-align: right;
     font-size: 14px;
 }

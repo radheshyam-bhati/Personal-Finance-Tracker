@@ -41,7 +41,7 @@
             <div class="category-item">
                 <div class="category-item-main">
                     <h3 class="category-name">{{ cat.name }}</h3>
-                    <p class="category-amount monetary-default">₹{{ "{:,.0f}".format(spending.amount) }}</p>
+                    <p class="category-amount monetary-default">${{ "{:,.2f}".format(spending.amount) }}</p>
                 </div>
                 <p class="category-percentage">{{ spending.percentage }}% of expenses</p>
             </div>

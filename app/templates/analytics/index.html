@@ -27,21 +27,21 @@
     <section class="key-metrics">
         <div class="metric-card">
             <p class="metric-label">Income</p>
-            <p class="metric-value monetary-large">₹{{ "{:,.0f}".format(summary.total_income) }}</p>
+            <p class="metric-value monetary-large">${{ "{:,.2f}".format(summary.total_income) }}</p>
             <p class="metric-comparison {% if period_comparison.income_change >= 0 %}comparison-positive{% else %}comparison-negative{% endif %}">
                 {% if period_comparison.income_change >= 0 %}+{% endif %}{{ period_comparison.income_change }}% vs previous period
             </p>
         </div>
         <div class="metric-card">
             <p class="metric-label">Expenses</p>
-            <p class="metric-value monetary-large">₹{{ "{:,.0f}".format(summary.total_expenses) }}</p>
+            <p class="metric-value monetary-large">${{ "{:,.2f}".format(summary.total_expenses) }}</p>
             <p class="metric-comparison {% if period_comparison.expenses_change <= 0 %}comparison-positive{% else %}comparison-negative{% endif %}">
                 {% if period_comparison.expenses_change >= 0 %}+{% endif %}{{ period_comparison.expenses_change }}% vs previous period
             </p>
         </div>
         <div class="metric-card">
             <p class="metric-label">Net savings</p>
-            <p class="metric-value monetary-large {% if summary.net_savings >= 0 %}text-positive{% else %}text-negative{% endif %}">₹{{ "{:,.0f}".format(summary.net_savings) }}</p>
+            <p class="metric-value monetary-large {% if summary.net_savings >= 0 %}text-positive{% else %}text-negative{% endif %}">${{ "{:,.2f}".format(summary.net_savings) }}</p>
             <p class="metric-comparison {% if period_comparison.savings_change >= 0 %}comparison-positive{% else %}comparison-negative{% endif %}">
                 {% if period_comparison.savings_change >= 0 %}+{% endif %}{{ period_comparison.savings_change }}% vs previous period
             </p>
@@ -70,7 +70,7 @@
             <div class="category-bar-item">
                 <div class="category-bar-info">
                     <span class="category-bar-name">{{ cat.category }}</span>
-                    <span class="category-bar-amount monetary-default">₹{{ "{:,.0f}".format(cat.amount) }}</span>
+                    <span class="category-bar-amount monetary-default">${{ "{:,.2f}".format(cat.amount) }}</span>
                 </div>
                 <div class="category-bar-stats">
                     <span class="category-bar-percentage">{{ cat.percentage }}%</span>
@@ -100,7 +100,7 @@
             {% for cat in top_categories %}
             <div class="top-spending-item">
                 <span class="top-spending-name">{{ cat.category }}</span>
-                <span class="top-spending-amount monetary-default">₹{{ "{:,.0f}".format(cat.amount) }}</span>
+                <span class="top-spending-amount monetary-default">${{ "{:,.2f}".format(cat.amount) }}</span>
             </div>
             {% endfor %}
         </div>
@@ -189,7 +189,7 @@ trendsChartInstance = new Chart(document.getElementById('trendsChart'), {
                             label += ': ';
                         }
                         if (context.parsed.y !== null) {
-                            label += '₹' + context.parsed.y.toLocaleString();
+                            label += '$' + context.parsed.y.toLocaleString();
                         }
                         return label;
                     }
@@ -200,7 +200,7 @@ trendsChartInstance = new Chart(document.getElementById('trendsChart'), {
             y: { 
                 beginAtZero: true, 
                 ticks: { 
-                    callback: v => '₹' + v.toLocaleString(),
+                    callback: v => '$' + v.toLocaleString(),
                     font: { family: 'IBM Plex Mono' }
                 },
                 grid: { color: '#DADDD5' }

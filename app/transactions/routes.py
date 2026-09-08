@@ -363,5 +363,3 @@ def undo_import(batch_id):
     
     flash(f'Import batch undone. {len(transactions)} transactions removed.', 'success')
     return redirect(url_for('transactions.import_batches'))
-
-from app.transactions import transactions_bp

@@ -31,9 +31,9 @@
 
             <!-- Amount Display -->
             <div class="goal-amounts">
-                <p class="goal-saved monetary-large">₹{{ "{:,.0f}".format(progress.saved) }}</p>
+                <p class="goal-saved monetary-large">${{ "{:,.2f}".format(progress.saved) }}</p>
                 <span class="goal-separator">/</span>
-                <p class="goal-target monetary-default">₹{{ "{:,.0f}".format(progress.target) }}</p>
+                <p class="goal-target monetary-default">${{ "{:,.2f}".format(progress.target) }}</p>
             </div>
 
             <!-- Progress Bar -->
@@ -52,18 +52,18 @@
                 </div>
                 <div class="goal-detail-item">
                     <span class="detail-label">Current monthly saving</span>
-                    <span class="detail-value monetary-small">₹{{ "{:,.0f}".format(progress.actual_monthly) }}</span>
+                    <span class="detail-value monetary-small">${{ "{:,.2f}".format(progress.actual_monthly) }}</span>
                 </div>
                 <div class="goal-detail-item">
                     <span class="detail-label">Required monthly saving</span>
-                    <span class="detail-value monetary-small">₹{{ "{:,.0f}".format(progress.required_monthly) }}</span>
+                    <span class="detail-value monetary-small">${{ "{:,.2f}".format(progress.required_monthly) }}</span>
                 </div>
             </div>
 
             <!-- Off-Track State -->
             {% if not progress.on_track and progress.monthly_shortfall > 0 %}
             <div class="goal-off-track">
-                <p class="off-track-message">You need ₹{{ "{:,.0f}".format(progress.monthly_shortfall) }} more per month to reach this goal.</p>
+                <p class="off-track-message">You need ${{ "{:,.2f}".format(progress.monthly_shortfall) }} more per month to reach this goal.</p>
             </div>
             {% endif %}
 

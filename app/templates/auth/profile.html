@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <header class="profile-header">
+        <h1 class="display-large">Profile</h1>
+        <p class="body-default">Manage your account settings.</p>
+    </header>
+
+    <section class="card">
+        <div class="profile-info">
+            <div class="profile-field">
+                <label class="profile-label">Email</label>
+                <p class="profile-value">{{ current_user.email }}</p>
+            </div>
+            <div class="profile-field">
+                <label class="profile-label">Member since</label>
+                <p class="profile-value">{{ current_user.created_at.strftime('%B %d, %Y') }}</p>
+            </div>
+            <div class="profile-field">
+                <label class="profile-label">Account status</label>
+                <p class="profile-value text-positive">Active</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2 class="card-title">Account Actions</h2>
+        <div class="profile-actions">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-secondary">Change Password</a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-secondary">Connected Accounts</a>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.profile-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.profile-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.profile-header h1 {
+    margin: 0;
+    color: var(--ink);
+}
+
+.profile-header p {
+    margin: 0;
+    color: var(--ink-soft);
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.profile-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--space-3);
+    border-bottom: var(--border-thin);
+}
+
+.profile-field:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.profile-label {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+
+.profile-value {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--ink);
+    margin: 0;
+    text-align: right;
+}
+
+.profile-actions {
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.profile-actions .btn {
+    flex: 1;
+}
+</style>
+{% endblock %}
