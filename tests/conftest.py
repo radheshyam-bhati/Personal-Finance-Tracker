@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app, db
-from app.models import User, Category, Transaction, CategoryRule
+from app.models import User, Category, Transaction, CategoryRule, Goal
 
 
 @pytest.fixture
@@ -32,6 +32,17 @@ def app():
         
         Category.seed_default_categories(user.id)
         CategoryRule.seed_default_rules(user.id)
+        
+        # Create a sample goal for testing
+        from datetime import date, timedelta
+        goal = Goal(
+            user_id=user.id,
+            name='Test Goal',
+            target_amount=1000.00,
+            start_date=date.today(),
+            target_date=date.today() + timedelta(days=365)
+        )
+        db.session.add(goal)
         db.session.commit()
         
         yield app
