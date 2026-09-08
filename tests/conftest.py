@@ -82,6 +82,8 @@ def sample_transaction(logged_in_client, app, sample_user):
         from datetime import date
         from app.models import Transaction
         
+        from app.models import Transaction
+        
         transaction = Transaction(
             user_id=sample_user.id,
             type='expense',
@@ -89,7 +91,10 @@ def sample_transaction(logged_in_client, app, sample_user):
             amount=50.00,
             date=date.today(),
             description='Test transaction',
-            source='manual'
+            source='manual',
+            dedup_hash=Transaction.compute_dedup_hash(
+                sample_user.id, date.today(), 50.00, 'Test transaction'
+            )
         )
         db.session.add(transaction)
         db.session.commit()

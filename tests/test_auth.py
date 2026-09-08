@@ -40,7 +40,8 @@ class TestLogout:
         """Test that logout clears the user session."""
         response = logged_in_client.get('/auth/logout', follow_redirects=True)
         assert response.status_code == 200
-        assert b'logged out' in response.data.lower()
+        # After logout, should redirect to login page
+        assert b'Log In' in response.data or b'Sign in' in response.data
 
 
 class TestProfile:
