@@ -1,115 +1,162 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Finance Tracker{% endblock %}
+{% block title %}Dashboard - Ledger{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
-    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 class="page-title">Dashboard</h1>
-        <div class="flex items-center space-x-3">
-            <a href="{{ url_for('transactions.add') }}" class="btn-primary">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Add Transaction
-            </a>
+<div class="dashboard-container">
+    <!-- Page Header -->
+    <header class="dashboard-header">
+        <div class="dashboard-header-left">
+            <h1 class="display-large">Dashboard</h1>
+            <p class="dashboard-subtitle">
+                {% if start_date and end_date %}
+                    {{ start_date.strftime('%B %d, %Y') }} – {{ end_date.strftime('%B %d, %Y') }}
+                {% else %}
+                    {{ "September 2026" if summary.transaction_count > 0 else "September 2026" }}
+                {% endif %}
+                Your financial picture for this month.
+            </p>
+        </div>
+        <div class="dashboard-header-right">
+            <form method="GET" class="period-selector">
+                <input type="date" name="start_date" id="start_date" value="{{ start_date.strftime('%Y-%m-%d') if start_date else '' }}" class="period-input">
+                <span class="period-separator">–</span>
+                <input type="date" name="end_date" id="end_date" value="{{ end_date.strftime('%Y-%m-%d') if end_date else '' }}" class="period-input">
+                <button type="submit" class="btn btn-secondary btn-sm">Apply</button>
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary btn-sm">Reset</a>
+            </form>
         </div>
     </header>
 
-    <div class="card border-0 bg-gradient-to-r from-ledger-green to-ledger-green-dark text-paper rounded-xl p-8" role="region" aria-label="Summary">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div>
-                <p class="stat-label">Total Income</p>
-                <p class="font-mono text-monetary-lg font-medium">${{ "{:,.2f}".format(summary.total_income) }}</p>
-            </div>
-            <div>
-                <p class="stat-label">Total Expenses</p>
-                <p class="font-mono text-monetary-lg font-medium">${{ "{:,.2f}".format(summary.total_expenses) }}</p>
-            </div>
-            <div>
-                <p class="stat-label">Net Savings</p>
-                <p class="font-mono text-monetary-lg font-medium {% if summary.net_savings >= 0 %}text-brass{% else %}text-red-200{% endif %}">${{ "{:,.2f}".format(summary.net_savings) }}</p>
+    {% if summary.transaction_count == 0 %}
+    <!-- Zero-Data Onboarding State -->
+    <section class="onboarding-dashboard">
+        <div class="onboarding-content">
+            <h2 class="display-small mb-4">Let's get your finances into the ledger.</h2>
+            <p class="body-default mb-6">Import your transactions or add them manually to see your financial picture, spending breakdown, and savings progress.</p>
+            <div class="onboarding-actions">
+                <a href="{{ url_for('transactions.import_csv') }}" class="btn btn-primary">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    <span>Import CSV</span>
+                </a>
+                <a href="{{ url_for('transactions.add') }}" class="btn btn-secondary">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span>Add Transaction</span>
+                </a>
             </div>
         </div>
-        <div class="mt-6 pt-6 border-t border-white/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div class="flex items-center space-x-6">
-                <div>
-                    <p class="font-ui text-body-sm text-white/80">Savings Rate</p>
-                    <p class="font-mono text-monetary-lg font-medium text-brass">{{ savings_rate }}%</p>
-                </div>
-                <div class="hidden sm:block w-px h-8 bg-white/20"></div>
-                <div>
-                    <p class="font-ui text-body-sm text-white/80">Transactions</p>
-                    <p class="font-mono text-monetary-lg font-medium">{{ summary.transaction_count }}</p>
-                </div>
+    </section>
+    {% else %}
+
+    <!-- Financial Summary Band -->
+    <section class="summary-band">
+        <div class="summary-metrics">
+            <div class="summary-metric">
+                <p class="summary-label">Total Income</p>
+                <p class="summary-value text-positive">${{ "{:,.2f}".format(summary.total_income) }}</p>
             </div>
-            {% if projections %}
-            <div class="flex items-center space-x-6">
-                <div class="text-right">
-                    <p class="font-ui text-body-sm text-white/80">Projected Annual</p>
-                    <p class="font-mono text-monetary-lg font-medium text-brass">${{ "{:,.2f}".format(projections.projected_annual_savings) }}</p>
-                </div>
+            <div class="summary-metric">
+                <p class="summary-label">Total Expenses</p>
+                <p class="summary-value text-negative">${{ "{:,.2f}".format(summary.total_expenses) }}</p>
             </div>
-            {% endif %}
+            <div class="summary-metric">
+                <p class="summary-label">Net Savings</p>
+                <p class="summary-value {% if summary.net_savings >= 0 %}text-positive{% else %}text-negative{% endif %}">${{ "{:,.2f}".format(summary.net_savings) }}</p>
+            </div>
+            <div class="summary-metric">
+                <p class="summary-label">Savings Rate</p>
+                <p class="summary-value text-positive">{{ savings_rate }}%</p>
+            </div>
+            <div class="summary-metric">
+                <p class="summary-label">Transactions</p>
+                <p class="summary-value">{{ summary.transaction_count }}</p>
+            </div>
         </div>
-    </div>
+    </section>
 
     {% if saving_opportunities %}
-    <section aria-labelledby="insights-heading" class="space-y-4">
-        <h2 id="insights-heading" class="section-title">Saving Opportunities</h2>
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <!-- Insights Section -->
+    <section class="insights-section">
+        <h2 class="display-small mb-4">Insights</h2>
+        <div class="insights-grid">
             {% for opp in saving_opportunities %}
-            <article class="card hover:border-ledger-green transition-colors">
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="font-ui font-medium text-ink">{{ opp.category }}</h3>
-                    <span class="badge {% if opp.percentage > 30 %}bg-brick/10 text-brick{% else %}bg-brass/10 text-brass{% endif %}">{{ opp.percentage }}%</span>
+            <article class="insight-card">
+                <div class="insight-header">
+                    <h3 class="insight-title">{{ opp.category }}</h3>
+                    <span class="insight-badge {% if opp.percentage > 30 %}insight-badge-warning{% else %}insight-badge-info{% endif %}">{{ opp.percentage }}%</span>
                 </div>
-                <p class="font-mono text-monetary text-brick mb-3">${{ "{:,.2f}".format(opp.amount) }} spent</p>
-                <p class="font-ui text-body-sm text-ink-soft">{{ opp.suggestion }}</p>
+                <p class="insight-amount text-negative">${{ "{:,.2f}".format(opp.amount) }}</p>
+                <p class="insight-suggestion">{{ opp.suggestion }}</p>
             </article>
             {% endfor %}
         </div>
     </section>
     {% endif %}
 
-    <div class="grid gap-6 lg:grid-cols-2">
-        <section class="card" aria-labelledby="monthly-trends-heading">
-            <h2 id="monthly-trends-heading" class="card-title">Monthly Trends</h2>
+    <!-- Spending Breakdown -->
+    <section class="chart-section">
+        <h2 class="display-small mb-4">Spending by Category</h2>
+        <div class="chart-card">
             <div class="chart-container">
-                <canvas id="monthlyChart" aria-label="Monthly income, expenses, and net savings trend"></canvas>
+                <canvas id="categoryChart"></canvas>
             </div>
-        </section>
-
-        <section class="card" aria-labelledby="category-breakdown-heading">
-            <h2 id="category-breakdown-heading" class="card-title">Expense Breakdown</h2>
-            <div class="chart-container">
-                <canvas id="categoryChart" aria-label="Expense breakdown by category"></canvas>
-            </div>
-        </section>
-    </div>
-
-    {% if goals %}
-    <section class="card" aria-labelledby="goals-heading">
-        <div class="flex items-center justify-between mb-4">
-            <h2 id="goals-heading" class="card-title m-0">Savings Goals</h2>
-            <a href="{{ url_for('goals.index') }}" class="btn-secondary text-sm">View All</a>
         </div>
-        <div class="space-y-4">
+    </section>
+
+    <!-- Monthly Cash Flow -->
+    <section class="chart-section">
+        <h2 class="display-small mb-4">Monthly Cash Flow</h2>
+        <div class="chart-card">
+            <div class="chart-container">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Savings Goals -->
+    {% if goals %}
+    <section class="goals-section">
+        <div class="section-header">
+            <h2 class="display-small">Savings Goals</h2>
+            <a href="{{ url_for('goals.index') }}" class="btn btn-secondary btn-sm">View All</a>
+        </div>
+        <div class="goals-grid">
             {% for goal, progress in goals[:3] %}
-            <article class="bg-stone-light/50 rounded-lg p-4">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="font-ui font-medium text-ink">{{ goal.name }}</h3>
-                    <span class="badge {% if progress.on_track %}bg-brass/10 text-brass{% else %}bg-brick/10 text-brick{% endif %}">
+            <article class="goal-card">
+                <div class="goal-header">
+                    <h3 class="goal-name">{{ goal.name }}</h3>
+                    <span class="goal-status {% if progress.on_track %}goal-status-on-track{% else %}goal-status-off-track{% endif %}">
                         {% if progress.on_track %}On Track{% else %}Off Track{% endif %}
                     </span>
                 </div>
-                <div class="progress-bar mb-2" role="progressbar" aria-valuenow="{{ progress.percentage }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ goal.name }} progress">
-                    <div class="progress-fill {% if progress.on_track %}on-track{% else %}off-track{% endif %}" style="--progress-width: {{ progress.percentage }}%"></div>
+                <div class="goal-metrics">
+                    <div class="goal-metric">
+                        <p class="goal-metric-label">Saved</p>
+                        <p class="goal-metric-value text-positive">${{ "{:,.2f}".format(progress.saved) }}</p>
+                    </div>
+                    <div class="goal-metric">
+                        <p class="goal-metric-label">Target</p>
+                        <p class="goal-metric-value">${{ "{:,.2f}".format(progress.target) }}</p>
+                    </div>
+                    <div class="goal-metric">
+                        <p class="goal-metric-label">Progress</p>
+p>
+                        <p class="goal-metric-value">{{ progress.percentage }}%</p>
+                    </div>
+                    <div class="goal-metric">
+                        <p class="goal-metric-label">Target Date</p>
+                        <p class="goal-metric-value">{{ goal.target_date.strftime('%b %d, %Y') }}</p>
+                    </div>
                 </div>
-                <div class="flex justify-between text-body-sm text-ink-soft">
-                    <span>${{ "{:,.2f}".format(progress.saved) }} / ${{ "{:,.2f}".format(progress.target) }}</span>
-                    <span>{{ progress.percentage }}% complete</span>
+                <div class="goal-progress">
+                    <div class="goal-progress-bar">
+                        <div class="goal-progress-fill" style="width: {{ progress.percentage }}%; background-color: {% if progress.on_track %}var(--brass){% else %}var(--brick){% endif %};"></div>
+                    </div>
                 </div>
                 {% if not progress.on_track and progress.shortfall > 0 %}
-                <p class="font-ui text-body-sm text-brick mt-2">Projected shortfall: ${{ "{:,.2f}".format(progress.shortfall) }}</p>
+                <div class="goal-alert">
+                    <p class="goal-alert-text">Projected shortfall: ${{ "{:,.2f}".format(progress.shortfall) }} — Consider reducing expenses or extending your target date.</p>
+                </div>
                 {% endif %}
             </article>
             {% endfor %}
@@ -117,35 +164,36 @@
     </section>
     {% endif %}
 
-    <section class="card" aria-labelledby="recent-transactions-heading">
-        <div class="flex items-center justify-between mb-4">
-            <h2 id="recent-transactions-heading" class="card-title m-0">Recent Transactions</h2>
-            <a href="{{ url_for('transactions.index') }}" class="btn-secondary text-sm">View All</a>
+    <!-- Recent Transactions -->
+    <section class="transactions-section">
+        <div class="section-header">
+            <h2 class="display-small">Recent Transactions</h2>
+            <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary btn-sm">View All →</a>
         </div>
         {% if recent_transactions %}
-        <div class="table-container">
-            <table class="data-table" role="table">
+        <div class="transactions-table-container">
+            <table class="transactions-table">
                 <thead>
                     <tr>
-                        <th scope="col">Date</th>
-                        <th scope="col">Description</th>
-                        <th scope="col">Category</th>
-                        <th scope="col" class="text-right">Amount</th>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th style="text-align: right;">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for t in recent_transactions %}
                     <tr>
-                        <td class="font-mono text-monetary-sm">{{ t.date.strftime('%b %d, %Y') }}</td>
-                        <td class="font-ui text-body">{{ t.description or t.category.name if t.category else 'Uncategorized' }}</td>
-                        <td>
+                        <td class="transaction-date" data-label="Date">{{ t.date.strftime('%b %d, %Y') }}</td>
+                        <td class="transaction-description" data-label="Description">{{ t.description or '—' }}</td>
+                        <td data-label="Category">
                             {% if t.category %}
-                            <span class="badge {% if t.type == 'income' %}badge-income{% else %}badge-expense{% endif %}">{{ t.category.name }}</span>
+                            <span class="category-badge {% if t.type == 'income' %}category-badge-income{% else %}category-badge-expense{% endif %}">{{ t.category.name }}</span>
                             {% else %}
-                            <span class="badge bg-stone-light text-stone">Uncategorized</span>
+                            <span class="category-badge category-badge-uncategorized">Uncategorized</span>
                             {% endif %}
                         </td>
-                        <td class="amount {% if t.type == 'income' %}positive{% else %}negative{% endif %}">
+                        <td class="transaction-amount {% if t.type == 'income' %}text-positive{% else %}text-negative{% endif %}" data-label="Amount">
                             {% if t.type == 'income' %}+{% else %}-{% endif %}${{ "{:,.2f}".format(t.amount) }}
                         </td>
                     </tr>
@@ -154,10 +202,8 @@
             </table>
         </div>
         {% else %}
-        <div class="empty-state">
-            <div class="empty-state-icon">📝</div>
-            <p class="empty-state-text">No transactions yet. Start by adding your first transaction or importing a CSV.</p>
-            <a href="{{ url_for('transactions.add') }}" class="btn-primary inline-block">Add Transaction</a>
+        <div class="empty-transactions">
+            <p class="body-default">No recent transactions.</p>
         </div>
         {% endif %}
     </section>
@@ -169,92 +215,708 @@
 const monthlyData = {{ monthly_trends | tojson }};
 const categoryData = {{ category_breakdown | tojson }};
 
-new Chart(document.getElementById('monthlyChart'), {
+Chart.defaults.font.family = 'Inter';
+let monthlyChartInstance = null;
+let categoryChartInstance = null;
+
+// Generate deterministic color palette from design system
+function generateCategoryColors(count) {
+    const colors = [];
+    const baseColors = [
+        '#1F6F54', // ledger-green
+        '#154C39', // ledger-green-dark
+        '#B8912A', // brass
+        '#9A7320', // brass-dark
+        '#8B8F87', // stone
+        '#6B6F67', // stone-dark
+        '#4A554F', // ink-soft
+        '#3A443E', // ink-darker
+        '#2D5A47', // green-dark
+        '#5A6B5F', // stone-blue
+    ];
+    
+    for (let i = 0; i < count; i++) {
+        colors.push(baseColors[i % baseColors.length]);
+    }
+    return colors;
+}
+
+// Format currency for tooltips
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+});
+
+// Category Chart - Horizontal Bar
+categoryChartInstance = new Chart(document.getElementById('categoryChart'), {
     type: 'bar',
     data: {
-        labels: monthlyData.map(m => m.month),
-        datasets: [
-            { 
-                label: 'Income', 
-                data: monthlyData.map(m => m.income), 
-                backgroundColor: '#1F6F54',
-                borderRadius: 4,
-                maxBarThickness: 40
-            },
-            { 
-                label: 'Expenses', 
-                data: monthlyData.map(m => m.expenses), 
-                backgroundColor: '#B84C3E',
-                borderRadius: 4,
-                maxBarThickness: 40
-            },
-            { 
-                label: 'Net', 
-                data: monthlyData.map(m => m.net), 
-                type: 'line', 
-                borderColor: '#3B82F6', 
-                backgroundColor: 'transparent', 
-                tension: 0.3, 
-                fill: false, 
-                pointRadius: 4,
-                pointBackgroundColor: '#3B82F6',
-                borderWidth: 2
-            }
-        ]
+        labels: categoryData.expense.map(c => c.category),
+        datasets: [{
+            data: categoryData.expense.map(c => c.amount),
+            backgroundColor: generateCategoryColors(categoryData.expense.length),
+            borderRadius: 4,
+            borderSkipped: false,
+        }]
     },
-    options: { 
-        responsive: true, 
-        maintainAspectRatio: false, 
-        plugins: { 
-            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { family: 'Inter' } } } 
-        }, 
-        scales: { 
-            y: { 
-                beginAtZero: true, 
-                ticks: { 
-                    callback: v => '$' + v.toLocaleString(),
-                    font: { family: 'IBM Plex Mono' }
-                },
-                grid: { color: '#DADDD5' }
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
             },
-            x: { 
-                grid: { display: false },
-                ticks: { font: { family: 'Inter' } }
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return currencyFormatter.format(context.raw);
+                    }
+                }
             }
-        } 
+        },
+        scales: {
+            x: {
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    },
+                    font: {
+                        family: 'IBM Plex Mono'
+                    }
+                },
+                grid: {
+                    color: '#DADDD5'
+                }
+            },
+            y: {
+                ticks: {
+                    font: {
+                        family: 'Inter',
+                        size: 13
+                    }
+                },
+                grid: {
+                    display: false
+                }
+            }
+        }
     }
 });
 
-new Chart(document.getElementById('categoryChart'), {
-    type: 'doughnut',
+// Monthly Cash Flow Chart
+monthlyChartInstance = new Chart(document.getElementById('monthlyChart'), {
+    type: 'line',
     data: {
-        labels: categoryData.expense.map(c => c.category),
-        datasets: [{ 
-            data: categoryData.expense.map(c => c.amount), 
-            backgroundColor: [
-                '#B84C3E', '#C96D4A', '#D98D66', '#EAAE82', '#FBBC9E', 
-                '#1F6F54', '#2A8A6A', '#35A680', '#40C296', '#6DD9B3'
-            ], 
-            borderWidth: 0,
-            borderRadius: 2
-        }]
+        labels: monthlyData.map(m => m.month),
+        datasets: [
+            {
+                label: 'Income',
+                data: monthlyData.map(m => m.income),
+                borderColor: '#1F6F54',
+                backgroundColor: 'rgba(31, 111, 84, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointBackgroundColor: '#1F6F54',
+                borderWidth: 2
+            },
+            {
+                label: 'Expenses',
+                data: monthlyData.map(m => m.expenses),
+                borderColor: '#B84C3E',
+                backgroundColor: 'rgba(184, 76, 62, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointBackgroundColor: '#B84C3E',
+                borderWidth: 2
+            },
+            {
+                label: 'Net',
+                data: monthlyData.map(m => m.net),
+                borderColor: '#4A554F',
+                backgroundColor: 'transparent',
+                tension: 0.4,
+                fill: false,
+                pointRadius: 4,
+                pointBackgroundColor: '#4A554F',
+                borderWidth: 2,
+                borderDash: [5, 5]
+            }
+        ]
     },
-    options: { 
-        responsive: true, 
-        maintainAspectRatio: false, 
-        plugins: { 
-            legend: { 
-                position: 'bottom', 
-                labels: { 
-                    padding: 16, 
-                    usePointStyle: true, 
-                    pointStyle: 'circle',
-                    font: { family: 'Inter', size: 13 }
-                } 
-            } 
-        }, 
-        cutout: '60%' 
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    usePointStyle: true,
+                    padding: 16,
+                    font: {
+                        family: 'Inter'
+                    }
+                }
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        return currencyFormatter.format(context.raw);
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    },
+                    font: {
+                        family: 'IBM Plex Mono'
+                    }
+                },
+                grid: {
+                    color: '#DADDD5'
+                }
+            },
+            x: {
+                ticks: {
+                    font: {
+                        family: 'Inter',
+                        size: 12
+                    }
+                },
+                grid: {
+                    display: false
+                }
+            }
+        },
+        interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+        }
     }
 });
 </script>
+
+<style>
+/* Dashboard Container */
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--section-spacing);
+}
+
+/* Dashboard Header */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+.dashboard-header-left {
+    flex: 1;
+}
+
+.dashboard-subtitle {
+    font-family: var(--font-sans);
+    font-size: var(--body-default-size);
+    font-weight: var(--body-default-weight);
+    line-height: var(--body-default-line-height);
+    color: var(--ink-soft);
+    margin-top: var(--space-2);
+}
+
+.dashboard-header-right {
+    display: flex;
+    align-items: center;
+}
+
+.period-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.period-input {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-thin);
+    border-color: var(--stone);
+    border-radius: var(--border-radius-md);
+    background-color: var(--paper-raised);
+    color: var(--ink);
+    min-height: 36px;
+}
+
+.period-separator {
+    color: var(--stone);
+    font-family: var(--font-sans);
+    font-size: 14px;
+}
+
+/* Summary Band */
+.summary-band {
+    background-color: var(--paper-raised);
+    border: var(--border-thin);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-6);
+}
+
+.summary-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-6);
+}
+
+.summary-metric {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.summary-label {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.summary-value {
+    font-family: var(--font-mono);
+    font-size: var(--monetary-large-size);
+    font-weight: var(--monetary-large-weight);
+    line-height: var(--monetary-large-line-height);
+    font-variant-numeric: tabular-numeric;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+}
+
+/* Insights Section */
+.insights-section {
+    margin-bottom: var(--section-spacing);
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--card-gap);
+}
+
+.insight-card {
+    background-color: var(--paper-raised);
+    border: var(--border-thin);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-4);
+}
+
+.insight-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+.insight-title {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+}
+
+.insight-badge {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    border: 1px solid currentColor;
+}
+
+.insight-badge-info {
+    color: var(--ledger-green);
+    background-color: rgba(31, 111, 84, 0.1);
+}
+
+.insight-badge-warning {
+    color: var(--brick);
+    background-color: rgba(184, 76, 62, 0.1);
+}
+
+.insight-amount {
+    font-family: var(--font-mono);
+    font-size: var(--monetary-default-size);
+    font-weight: var(--monetary-default-weight);
+    line-height: var(--monetary-default-line-height);
+    font-variant-numeric: tabular-numeric;
+    color: var(--brick);
+    margin-bottom: var(--space-2);
+}
+
+.insight-suggestion {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.4;
+}
+
+/* Chart Sections */
+.chart-section {
+    margin-bottom: var(--section-spacing);
+}
+
+.chart-card {
+    background-color: var(--paper-raised);
+    border: var(--border-thin);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-6);
+}
+
+.chart-container {
+    position: relative;
+    height: 350px;
+}
+
+/* Goals Section */
+.goals-section {
+    margin-bottom: var(--section-spacing);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+}
+
+.goals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--card-gap);
+}
+
+.goal-card {
+    background-color: var(--paper-raised);
+    border: var(--border-thin);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-6);
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+}
+
+.goal-name {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ink);
+}
+
+.goal-status {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+}
+
+.goal-status-on-track {
+    color: var(--brass);
+    background-color: rgba(184, 145, 42, 0.1);
+}
+
+.goal-status-off-track {
+    color: var(--brick);
+    background-color: rgba(184, 76, 62, 0.1);
+}
+
+.goal-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.goal-metric-label {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin-bottom: var(--space-1);
+}
+
+.goal-metric-value {
+    font-family: var(--font-mono);
+    font-size: var(--monetary-default-size);
+    font-weight: var(--monetary-default-weight);
+    line-height: var(--monetary-default-line-height);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+}
+
+.goal-progress {
+    margin-bottom: var(--space-4);
+}
+
+.goal-progress-bar {
+    width: 100%;
+    height: 12px;
+    background-color: var(--stone-light);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.goal-progress-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.goal-alert {
+    background-color: rgba(184, 76, 62, 0.1);
+    border: 1px solid var(--brick);
+    border-radius: var(--border-radius-md);
+    padding: var(--space-3);
+}
+
+.goal-alert-text {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--brick);
+}
+
+/* Transactions Section */
+.transactions-section {
+    margin-bottom: var(--section-spacing);
+}
+
+.transactions-table-container {
+    background-color: var(--paper-raised);
+    border: var(--border-thin);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.transactions-table thead th {
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--border-thin);
+    color: var(--ink-soft);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.transactions-table tbody td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--border-thin);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--ink);
+}
+
+.transactions-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.transactions-table tbody tr:hover td {
+    background-color: rgba(218, 221, 213, 0.3);
+}
+
+.transaction-date {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+    color: var(--ink-soft);
+}
+
+.transaction-description {
+    color: var(--ink);
+}
+
+.transaction-amount {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-;
+    text-align: right;
+    font-size: 14px;
+}
+
+.category-badge {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+}
+
+.category-badge-income {
+    color: var(--ledger-green);
+    background-color: rgba(31, 111, 84, 0.1);
+}
+
+.category-badge-expense {
+    color: var(--ink-soft);
+    background-color: var(--stone-light);
+}
+
+.category-badge-uncategorized {
+    color: var(--ink-soft);
+    background-color: var(--stone-light);
+}
+
+.empty-transactions {
+    background-color: var(--paper-raised);
+    border: var(--border-thin);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-8);
+    text-align: center;
+}
+
+/* Onboarding Dashboard */
+.onboarding-dashboard {
+    background-color: var(--paper-raised);
+    border: var(--border-thin);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-12);
+    text-align: center;
+}
+
+.onboarding-content {
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.onboarding-actions {
+    display: flex;
+    gap: var(--space-4);
+    justify-content: center;
+    margin-top: var(--space-6);
+}
+
+/* Responsive Design */
+@media (max-width: 1023px) {
+    .summary-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .insights-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .goals-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .goal-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 767px) {
+    .dashboard-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .dashboard-header-right {
+        width: 100%;
+    }
+    
+    .period-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .period-input {
+        width: 100%;
+        min-height: 44px;
+    }
+    
+    .period-selector .btn {
+        min-height: 44px;
+    }
+    
+    .summary-metrics {
+        grid-template-columns: 1fr;
+    }
+    
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-metric {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .chart-container {
+        height: 280px;
+    }
+    
+    .goal-metrics {
+        grid-template-columns: 1fr;
+    }
+    
+    .onboarding-actions {
+        flex-direction: column;
+    }
+    
+    .onboarding-actions .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+    
+    /* Convert transactions table to card layout on mobile */
+    .transactions-table thead {
+        display: none;
+    }
+    
+    .transactions-table tbody tr {
+        display: block;
+        border-bottom: var(--border-thin);
+        padding: var(--space-4);
+    }
+    
+    .transactions-table tbody td {
+        display: block;
+        text-align: left;
+        padding: var(--space-2) 0;
+        border: none;
+    }
+    
+    .transactions-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 500;
+        color: var(--ink-soft);
+        margin-right: var(--space-2);
+    }
+    
+    .transaction-amount {
+        text-align: left;
+    }
+}
+</style>
 {% endblock %}

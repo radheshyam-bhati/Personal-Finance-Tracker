@@ -1,7 +1,7 @@
 from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import login_user, logout_user, login_required, current_user
 from app.auth import auth_bp
-from app import db
+from app import db, oauth
 from app.models import User, Category, CategoryRule
 from app.forms import LoginForm, SignupForm
 
@@ -72,3 +72,38 @@ def logout():
 @login_required
 def profile():
     return render_template('auth/profile.html')
+
+
+@auth_bp.route('/login/google')
+def login_google():
+    redirect_uri = url_for('auth.auth_google', _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+
+@auth_bp.route('/auth/google')
+def auth_google():
+    token = oauth.google.authorize_access_token()
+    user_info = token.get('userinfo')
+    
+    if user_info:
+        email = user_info.get('email').lower().strip()
+        user = User.query.filter_by(email=email).first()
+        
+        if not user:
+            # Create a new user without a password
+            user = User(email=email)
+            db.session.add(user)
+            db.session.flush()
+            
+            Category.seed_default_categories(user.id)
+            CategoryRule.seed_default_rules(user.id)
+            
+            db.session.commit()
+            
+        login_user(user, remember=True)
+        session.permanent = True
+        flash('Successfully logged in with Google.', 'success')
+        return redirect(url_for('main.dashboard'))
+        
+    flash('Google login failed.', 'danger')
+    return redirect(url_for('auth.login'))

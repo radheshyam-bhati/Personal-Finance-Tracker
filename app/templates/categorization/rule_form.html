@@ -3,34 +3,34 @@
 {% block title %}{{ title }} - Finance Tracker{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto">
-    <header class="mb-8">
-        <h1 class="page-title">{{ title }}</h1>
+<div class="form-page">
+    <header class="form-page-header">
+        <h1 class="display-large">{{ title }}</h1>
     </header>
 
-    <form method="POST" class="card space-y-6" novalidate>
+    <form method="POST" class="form-card" novalidate>
         {{ form.csrf_token }}
         
-        <div>
-            <label for="{{ form.keyword.id }}" class="label-field">Keyword</label>
-            {{ form.keyword(class="input-field" + (" error" if form.keyword.errors else ""), placeholder="e.g., uber, netflix, grocery") }}
-            <p class="font-ui text-body-sm text-ink-soft mt-1">Transactions containing this keyword (case-insensitive) will be categorized automatically.</p>
+        <div class="form-field">
+            <label for="{{ form.keyword.id }}" class="form-label">Keyword</label>
+            {{ form.keyword(class="form-input" + (" form-input-error" if form.keyword.errors else ""), placeholder="e.g., uber, netflix, grocery") }}
+            <p class="form-hint">Transactions containing this keyword (case-insensitive) will be categorized automatically.</p>
             {% if form.keyword.errors %}
-            <p class="error-message mt-1">{{ form.keyword.errors[0] }}</p>
+            <p class="form-error">{{ form.keyword.errors[0] }}</p>
             {% endif %}
         </div>
 
-        <div>
-            <label for="{{ form.category.id }}" class="label-field">Category</label>
-            {{ form.category(class="input-field" + (" error" if form.category.errors else "")) }}
+        <div class="form-field">
+            <label for="{{ form.category.id }}" class="form-label">Category</label>
+            {{ form.category(class="form-input" + (" form-input-error" if form.category.errors else "")) }}
             {% if form.category.errors %}
-            <p class="error-message mt-1">{{ form.category.errors[0] }}</p>
+            <p class="form-error">{{ form.category.errors[0] }}</p>
             {% endif %}
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-stone-light">
-            <button type="submit" class="btn-primary flex-1 sm:flex-none">Save Rule</button>
-            <a href="{{ url_for('categorization.rules') }}" class="btn-secondary flex-1 sm:flex-none text-center">Cancel</a>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Rule</button>
+            <a href="{{ url_for('categorization.rules') }}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>

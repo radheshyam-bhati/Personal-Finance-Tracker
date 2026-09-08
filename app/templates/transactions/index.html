@@ -1,119 +1,129 @@
 {% extends "base.html" %}
 
-{% block title %}Transactions - Finance Tracker{% endblock %}
+{% block title %}Transactions - Ledger{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 class="page-title">Transactions</h1>
-        <div class="flex items-center space-x-3 flex-wrap">
-            <a href="{{ url_for('transactions.add') }}" class="btn-primary">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Add Transaction
+<div class="transactions-container">
+    <!-- Page Header -->
+    <header class="transactions-header">
+        <div class="transactions-header-left">
+            <h1 class="display-large">Transactions</h1>
+            <p class="transactions-subtitle">Review and manage every transaction in your ledger.</p>
+        </div>
+        <div class="transactions-header-right">
+            <a href="{{ url_for('transactions.import_csv') }}" class="btn btn-secondary">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                <span class="desktop-only">Import CSV</span>
             </a>
-            <a href="{{ url_for('transactions.import_csv') }}" class="btn-secondary">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                Import CSV
+            <a href="{{ url_for('transactions.add') }}" class="btn btn-primary">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span class="desktop-only">Add Transaction</span>
             </a>
         </div>
     </header>
 
-    <section class="card" aria-labelledby="filter-heading">
-        <h2 id="filter-heading" class="card-title">Filters</h2>
-        <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-            <div>
-                <label for="type" class="label-field">Type</label>
-                <select name="type" id="type" class="input-field">
-                    <option value="">All Types</option>
-                    <option value="income" {% if form.type.data == 'income' %}selected{% endif %}>Income</option>
-                    <option value="expense" {% if form.type.data == 'expense' %}selected{% endif %}>Expense</option>
-                </select>
+    <!-- Compact Filter Toolbar -->
+    <section class="filter-toolbar">
+        <form method="GET" class="filter-form">
+            <div class="filter-primary">
+                <div class="filter-search">
+                    <input type="text" name="search" id="search" value="{{ form.search.data or '' }}" placeholder="Search transactions..." class="filter-search-input">
+                </div>
+                
+                <div class="filter-select">
+                    <select name="type" id="type" class="filter-select-input">
+                        <option value="">All Types</option>
+                        <option value="income" {% if form.type.data == 'income' %}selected{% endif %}>Income</option>
+                        <option value="expense" {% if form.type.data == 'expense' %}selected{% endif %}>Expense</option>
+                    </select>
+                </div>
+                
+                <div class="filter-select">
+                    <select name="category" id="category" class="filter-select-input">
+                        <option value="">All Categories</option>
+                        {% for c in form.category.choices %}
+                        {% if c[0] != 0 %}
+                        <option value="{{ c[0] }}" {% if form.category.data == c[0] %}selected{% endif %}>{{ c[1] }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <button type="button" id="toggleAdvancedFilters" class="filter-toggle">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    <span class="desktop-only">Filters</span>
+                </button>
             </div>
-            <div>
-                <label for="category" class="label-field">Category</label>
-                <select name="category" id="category" class="input-field">
-                    <option value="">All Categories</option>
-                    {% for c in form.category.choices %}
-                    {% if c[0] != 0 %}
-                    <option value="{{ c[0] }}" {% if form.category.data == c[0] %}selected{% endif %}>{{ c[1] }}</option>
-                    {% endif %}
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label for="start_date" class="label-field">From Date</label>
-                <input type="date" name="start_date" id="start_date" value="{{ form.start_date.data.strftime('%Y-%m-%d') if form.start_date.data else '' }}" class="input-field">
-            </div>
-            <div>
-                <label for="end_date" class="label-field">To Date</label>
-                <input type="date" name="end_date" id="end_date" value="{{ form.end_date.data.strftime('%Y-%m-%d') if form.end_date.data else '' }}" class="input-field">
-            </div>
-            <div>
-                <label for="min_amount" class="label-field">Min Amount</label>
-                <input type="number" name="min_amount" id="min_amount" step="0.01" min="0" value="{{ form.min_amount.data or '' }}" class="input-field input-field-mono" placeholder="0.00">
-            </div>
-            <div>
-                <label for="max_amount" class="label-field">Max Amount</label>
-                <input type="number" name="max_amount" id="max_amount" step="0.01" min="0" value="{{ form.max_amount.data or '' }}" class="input-field input-field-mono" placeholder="0.00">
-            </div>
-            <div class="lg:col-span-2">
-                <label for="search" class="label-field">Search Description</label>
-                <input type="text" name="search" id="search" value="{{ form.search.data or '' }}" class="input-field" placeholder="Search transactions...">
-            </div>
-            <div class="lg:col-span-6 flex flex-wrap gap-3">
-                <button type="submit" class="btn-primary">Apply Filters</button>
-                <a href="{{ url_for('transactions.index') }}" class="btn-secondary">Clear</a>
+            
+            <div class="filter-advanced" id="advancedFilters" style="display: none;">
+                <div class="filter-advanced-grid">
+                    <div class="filter-field">
+                        <label for="start_date">From Date</label>
+                        <input type="date" name="start_date" id="start_date" value="{{ form.start_date.data.strftime('%Y-%m-%d') if form.start_date.data else '' }}" class="filter-input">
+                    </div>
+                    <div class="filter-field">
+                        <label for="end_date">To Date</label>
+                        <input type="date" name="end_date" id="end_date" value="{{ form.end_date.data.strftime('%Y-%m-%d') if form.end_date.data else '' }}" class="filter-input">
+                    </div>
+                    <div class="filter-field">
+                        <label for="min_amount">Min Amount</label>
+                        <input type="number" name="min_amount" id="min_amount" value="{{ form.min_amount.data if form.min_amount.data else '' }}" placeholder="0.00" step="0.01" class="filter-input">
+                    </div>
+                    <div class="filter-field">
+                        <label for="max_amount">Max Amount</label>
+                        <input type="number" name="max_amount" id="max_amount" value="{{ form.max_amount.data if form.max_amount.data else '' }}" placeholder="0.00" step="0.01" class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-advanced-actions">
+                    <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                    <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary btn-sm">Clear</a>
+                </div>
             </div>
         </form>
     </section>
 
-    <section class="card" aria-labelledby="transactions-heading">
-        <h2 id="transactions-heading" class="card-title mb-4">Transactions ({{ pagination.total }})</h2>
+    <!-- Transaction Count -->
+    <div class="transaction-count">
+        <span class="count-label">{{ pagination.total }} transaction{{ 's' if pagination.total != 1 else '' }}</span>
+    </div>
+
+    <!-- Transactions Table -->
+    <section class="transactions-table-section">
         {% if transactions %}
-        <div class="table-container">
-            <table class="data-table" role="table">
+        <div class="transactions-table-wrapper">
+            <table class="transactions-table">
                 <thead>
                     <tr>
-                        <th scope="col">Date</th>
-                        <th scope="col">Description</th>
-                        <th scope="col">Category</th>
-                        <th scope="col">Type</th>
-                        <th scope="col" class="text-right">Amount</th>
-                        <th scope="col">Source</th>
-                        <th scope="col"><span class="sr-only">Actions</span></th>
+                        <th class="col-date">Date</th>
+                        <th class="col-description">Description</th>
+                        <th class="col-category">Category</th>
+                        <th class="col-amount">Amount</th>
+                        <th class="col-actions"></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for t in transactions %}
-                    <tr>
-                        <td class="font-mono text-monetary-sm whitespace-nowrap">{{ t.date.strftime('%b %d, %Y') }}</td>
-                        <td class="font-ui text-body max-w-xs truncate">{{ t.description or '—' }}</td>
-                        <td>
+                    <tr class="transaction-row">
+                        <td class="transaction-date">{{ t.date.strftime('%b %d, %Y') }}</td>
+                        <td class="transaction-description">{{ t.description or '—' }}</td>
+                        <td class="transaction-category">
                             {% if t.category %}
-                            <span class="badge {% if t.type == 'income' %}badge-income{% else %}badge-expense{% endif %}">{{ t.category.name }}</span>
+                            <span class="category-badge {% if t.type == 'income' %}category-badge-income{% else %}category-badge-expense{% endif %}">{{ t.category.name }}</span>
                             {% else %}
-                            <span class="badge bg-stone-light text-stone">Uncategorized</span>
+                            <span class="category-badge category-badge-uncategorized">Uncategorized</span>
                             {% endif %}
                         </td>
-                        <td>
-                            <span class="badge {% if t.type == 'income' %}badge-income{% else %}badge-expense{% endif %}">
-                                {{ t.type.capitalize() }}
-                            </span>
-                        </td>
-                        <td class="amount {% if t.type == 'income' %}positive{% else %}negative{% endif %} whitespace-nowrap">
+                        <td class="transaction-amount {% if t.type == 'income' %}text-positive{% else %}text-negative{% endif %}">
                             {% if t.type == 'income' %}+{% else %}-{% endif %}${{ "{:,.2f}".format(t.amount) }}
                         </td>
-                        <td>
-                            <span class="font-ui text-body-sm text-ink-soft capitalize">{{ t.source.replace('_', ' ') }}</span>
-                        </td>
-                        <td>
-                            <div class="flex items-center justify-end space-x-2">
-                                <a href="{{ url_for('transactions.edit', transaction_id=t.id) }}" class="p-2 text-ink-soft hover:text-ledger-green hover:bg-stone-light rounded-lg transition-colors" aria-label="Edit transaction" title="Edit">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        <td class="transaction-actions">
+                            <div class="actions-wrapper">
+                                <a href="{{ url_for('transactions.edit', transaction_id=t.id) }}" class="action-btn action-btn-edit" title="Edit">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                 </a>
                                 <form action="{{ url_for('transactions.delete', transaction_id=t.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this transaction?');">
-                                    <button type="submit" class="p-2 text-ink-soft hover:text-brick hover:bg-stone-light rounded-lg transition-colors" aria-label="Delete transaction" title="Delete">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    <button type="submit" class="action-btn action-btn-delete" title="Delete">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </form>
                             </div>
@@ -124,24 +134,644 @@
             </table>
         </div>
 
+        <!-- Pagination -->
         {% if pagination.pages > 1 %}
-        <nav class="mt-6 flex items-center justify-center space-x-2" aria-label="Pagination">
-            {% if pagination.has_prev %}
-            <a href="{{ url_for('transactions.index', page=pagination.prev_num, **request.args) }}" class="btn-secondary text-sm" aria-label="Previous page">Previous</a>
-            {% endif %}
-            <span class="font-ui text-body text-ink-soft">Page {{ pagination.page }} of {{ pagination.pages }}</span>
-            {% if pagination.has_next %}
-            <a href="{{ url_for('transactions.index', page=pagination.next_num, **request.args) }}" class="btn-secondary text-sm" aria-label="Next page">Next</a>
-            {% endif %}
+        <nav class="pagination" aria-label="Pagination">
+            <div class="pagination-info">
+                Showing {{ (pagination.page - 1) * pagination.per_page + 1 }}–{{ min(pagination.page * pagination.per_page, pagination.total) }} of {{ pagination.total }}
+            </div>
+            <div class="pagination-controls">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('transactions.index', page=pagination.prev_num, **request.args) }}" class="pagination-btn">Previous</a>
+                {% endif %}
+                
+                {% for page_num in pagination.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num == pagination.page %}
+                        <span class="pagination-page pagination-page-current">{{ page_num }}</span>
+                        {% else %}
+                        <a href="{{ url_for('transactions.index', page=page_num, **request.args) }}" class="pagination-page">{{ page_num }}</a>
+                        {% endif %}
+                    {% else %}
+                    <span class="pagination-ellipsis">...</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <a href="{{ url_for('transactions.index', page=pagination.next_num, **request.args) }}" class="pagination-btn">Next</a>
+                {% endif %}
+            </div>
         </nav>
         {% endif %}
+        
         {% else %}
+        <!-- Empty State -->
         <div class="empty-state">
-            <div class="empty-state-icon">📋</div>
-            <p class="empty-state-text">No transactions match your filters.</p>
-            <a href="{{ url_for('transactions.add') }}" class="btn-primary inline-block mt-4">Add Transaction</a>
+            {% if request.args.get('search') or request.args.get('type') or request.args.get('category') or request.args.get('start_date') or request.args.get('end_date') or request.args.get('min_amount') or request.args.get('max_amount') %}
+            <!-- Filtered Empty State -->
+            <div class="empty-state-content">
+                <h3 class="display-small">No transactions match your filters</h3>
+                <p class="body-default">Try adjusting your search criteria or clear the filters to see all transactions.</p>
+                <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">Clear Filters</a>
+            </div>
+            {% else %}
+            <!-- First-Use Empty State -->
+            <div class="empty-state-content">
+                <h3 class="display-small">No transactions yet</h3>
+                <p class="body-default">Import a CSV or add one manually to start tracking your finances.</p>
+                <div class="empty-state-actions">
+                    <a href="{{ url_for('transactions.import_csv') }}" class="btn btn-primary">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        <span>Import CSV</span>
+                    </a>
+                    <a href="{{ url_for('transactions.add') }}" class="btn btn-secondary">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Add Transaction</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
         </div>
         {% endif %}
     </section>
 </div>
+
+<style>
+/* Transactions Container */
+.transactions-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+/* Header */
+.transactions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+.transactions-header-left {
+    flex: 1;
+}
+
+.transactions-subtitle {
+    font-family: var(--font-sans);
+    font-size: var(--body-default-size);
+    font-weight: var(--body-default-weight);
+    line-height: var(--body-default-line-height);
+    color: var(--ink-soft);
+    margin-top: var(--space-2);
+}
+
+.transactions-header-right {
+    display: flex;
+    gap: var(--space-3);
+}
+
+/* Filter Toolbar */
+.filter-toolbar {
+    background-color: var(--paper-raised);
+    border: var(--border-thin);
+    border-radius: var(--border-radius-md);
+    padding: var(--space-4);
+}
+
+.filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.filter-primary {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-search {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-search-input {
+    width: 100%;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-thin);
+    border-color: var(--stone);
+    border-radius: var(--border-radius-md);
+    background-color: var(--paper);
+    color: var(--ink);
+    min-height: 36px;
+}
+
+.filter-search-input::placeholder {
+    color: var(--ink-soft);
+}
+
+.filter-select {
+    min-width: 140px;
+}
+
+.filter-select-input {
+    width: 100%;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-thin);
+    border-color: var(--stone);
+    border-radius: var(--border-radius-md);
+    background-color: var(--paper);
+    color: var(--ink);
+    min-height: 36px;
+    cursor: pointer;
+}
+
+.filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background-color: var(--paper);
+    border: var(--border-thin);
+    border-color: var(--stone);
+    border-radius: var(--border-radius-md);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.filter-toggle:hover {
+    background-color: var(--stone-light);
+    border-color: var(--ink-soft);
+}
+
+/* Advanced Filters */
+.filter-advanced {
+    padding-top: var(--space-4);
+    border-top: var(--border-thin);
+}
+
+.filter-advanced-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.filter-field label {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+
+.filter-input {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-thin);
+    border-color: var(--stone);
+    border-radius: var(--border-radius-md);
+    background-color: var(--paper);
+    color: var(--ink);
+    min-height: 36px;
+}
+
+.filter-advanced-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+}
+
+/* Transaction Count */
+.transaction-count {
+    display: flex;
+    align-items: center;
+}
+
+.count-label {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+
+/* Transactions Table */
+.transactions-table-section {
+    background-color: var(--paper-raised);
+    border: var(--border-thin);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+}
+
+.transactions-table-wrapper {
+    overflow-x: auto;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.transactions-table thead th {
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--border-thin);
+    color: var(--ink-soft);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    background-color: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.col-date {
+    width: 140px;
+}
+
+.col-description {
+    min-width: 200px;
+}
+
+.col-category {
+    width: 140px;
+}
+
+.col-amount {
+    width: 120px;
+    text-align: right;
+}
+
+.col-actions {
+    width: 80px;
+}
+
+.transactions-table tbody td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--border-thin);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--ink);
+}
+
+.transactions-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.transaction-row:hover td {
+    background-color: rgba(218, 221, 213, 0.3);
+}
+
+.transaction-date {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+    color: var(--ink-soft);
+}
+
+.transaction-description {
+    color: var(--ink);
+    font-weight: 400;
+}
+
+.transaction-amount {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.transaction-actions {
+    text-align: right;
+}
+
+.actions-wrapper {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: flex-end;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+
+.transaction-row:hover .actions-wrapper {
+    opacity: 1;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2);
+    background: transparent;
+    border: none;
+    color: var(--ink-soft);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: all 120ms ease;
+    text-decoration: none;
+}
+
+.action-btn:hover {
+    background-color: var(--stone-light);
+    color: var(--ink);
+}
+
+.action-btn-edit:hover {
+    color: var(--ledger-green);
+    background-color: rgba(31, 111, 84, 0.1);
+}
+
+.action-btn-delete:hover {
+    color: var(--brick);
+    background-color: rgba(184, 76, 62, 0.1);
+}
+
+.category-badge {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+}
+
+.category-badge-income {
+    color: var(--ledger-green);
+    background-color: rgba(31, 111, 84, 0.1);
+}
+
+.category-badge-expense {
+    color: var(--ink-soft);
+    background-color: var(--stone-light);
+}
+
+.category-badge-uncategorized {
+    color: var(--ink-soft);
+    background-color: var(--stone-light);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4);
+    border-top: var(--border-thin);
+}
+
+.pagination-info {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--ink-soft);
+}
+
+.pagination-controls {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.pagination-btn {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    padding: var(--space-2) var(--space-3);
+    background-color: var(--paper);
+    border: var(--border-thin);
+    border-color: var(--stone);
+    border-radius: var(--border-radius-sm);
+    color: var(--ink);
+    text-decoration: none;
+    transition: all 120ms ease;
+}
+
+.pagination-btn:hover {
+    background-color: var(--stone-light);
+    border-color: var(--ink-soft);
+}
+
+.pagination-page {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    padding: var(--space-2) var(--space-3);
+    background-color: transparent;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    color: var(--ink);
+    text-decoration: none;
+    transition: all 120ms ease;
+}
+
+.pagination-page:hover {
+    background-color: var(--stone-light);
+}
+
+.pagination-page-current {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    padding: var(--space-2) var(--space-3);
+    background-color: var(--ledger-green);
+    color: var(--paper);
+    border-radius: var(--border-radius-sm);
+}
+
+.pagination-ellipsis {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding: var(--space-2);
+}
+
+/* Empty State */
+.empty-state {
+    padding: var(--space-12);
+    text-align: center;
+}
+
+.empty-state-content {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.empty-state-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: center;
+    margin-top: var(--space-6);
+}
+
+/* Responsive Design */
+@media (max-width: 1023px) {
+    .filter-primary {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-search,
+    .filter-select {
+        width: 100%;
+    }
+    
+    .filter-advanced-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 767px) {
+    .transactions-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .transactions-header-right {
+        width: 100%;
+    }
+    
+    .transactions-header-right .btn {
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .filter-primary {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-search,
+    .filter-select {
+        width: 100%;
+        min-height: 44px;
+    }
+    
+    .filter-primary .btn {
+        min-height: 44px;
+    }
+    
+    .filter-advanced-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-advanced-actions {
+        flex-direction: column;
+    }
+    
+    .filter-advanced-actions .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+    
+    .pagination {
+        flex-direction: column;
+        gap: var(--space-4);
+        align-items: center;
+    }
+    
+    .pagination-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    /* Mobile Transaction Table - Transform to Card List */
+    .transactions-table-wrapper {
+        overflow-x: visible;
+    }
+    
+    .transactions-table thead {
+        display: none;
+    }
+    
+    .transactions-table tbody {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .transaction-row {
+        display: flex;
+        flex-direction: column;
+        padding: var(--space-4);
+        border-bottom: var(--border-thin);
+    }
+    
+    .transaction-row:hover td {
+        background-color: transparent;
+    }
+    
+    .transaction-row:hover {
+        background-color: rgba(218, 221, 213, 0.3);
+    }
+    
+    .transaction-date {
+        font-size: 13px;
+        color: var(--ink-soft);
+        margin-bottom: var(--space-1);
+    }
+    
+    .transaction-description {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--ink);
+        margin-bottom: var(--space-2);
+    }
+    
+    .transaction-category {
+        margin-bottom: var(--space-2);
+    }
+    
+    .transaction-amount {
+        font-size: 18px;
+        font-weight: 600;
+        text-align: left;
+        margin-bottom: var(--space-3);
+    }
+    
+    .transaction-actions {
+        text-align: left;
+    }
+    
+    .actions-wrapper {
+        opacity: 1;
+    }
+    
+    .empty-state-actions {
+        flex-direction: column;
+    }
+    
+    .empty-state-actions .btn {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('toggleAdvancedFilters');
+    const advancedFilters = document.getElementById('advancedFilters');
+    
+    if (toggleBtn && advancedFilters) {
+        toggleBtn.addEventListener('click', function() {
+            const isHidden = advancedFilters.style.display === 'none';
+            advancedFilters.style.display = isHidden ? 'block' : 'none';
+        });
+    }
+});
+</script>
 {% endblock %}

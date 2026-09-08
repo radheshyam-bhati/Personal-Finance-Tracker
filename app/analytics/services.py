@@ -1,5 +1,5 @@
 import pandas as pd
-from datetime import datetime, date
+from datetime import date, datetime, timedelta
 from app import db
 from app.models import Transaction, Category, Goal, CategoryRule
 
@@ -225,6 +225,97 @@ class FinanceAnalytics:
             return 0
         return round((summary['net_savings'] / summary['total_income']) * 100, 1)
     
+    def get_period_comparison(self, start_date: date | None = None, end_date: date | None = None) -> dict[str, float]:
+        current_summary = self.get_summary(start_date, end_date)
+        
+        # Calculate previous period (same duration, before current period)
+        if start_date and end_date:
+            duration = (end_date - start_date).days
+            prev_end_date = start_date - timedelta(days=1)
+            prev_start_date = prev_end_date - timedelta(days=duration)
+            prev_summary = self.get_summary(prev_start_date, prev_end_date)
+        else:
+            # Default to previous month
+            prev_summary = self.get_summary()
+        
+        # Calculate percentage changes
+        income_change = 0
+        expenses_change = 0
+        savings_change = 0
+        
+        if prev_summary['total_income'] > 0:
+            income_change = round(((current_summary['total_income'] - prev_summary['total_income']) / prev_summary['total_income']) * 100, 1)
+        
+        if prev_summary['total_expenses'] > 0:
+            expenses_change = round(((current_summary['total_expenses'] - prev_summary['total_expenses']) / prev_summary['total_expenses']) * 100, 1)
+        
+        if prev_summary['net_savings'] != 0:
+            savings_change = round(((current_summary['net_savings'] - prev_summary['net_savings']) / abs(prev_summary['net_savings'])) * 100, 1)
+        
+        return {
+            'income_change': income_change,
+            'expenses_change': expenses_change,
+            'savings_change': savings_change,
+            'prev_income': prev_summary['total_income'],
+            'prev_expenses': prev_summary['total_expenses'],
+            'prev_savings': prev_summary['net_savings']
+        }
+    
+    def generate_insights(self, start_date: date | None = None, end_date: date | None = None) -> list[dict[str, str]]:
+        insights = []
+        
+        current_summary = self.get_summary(start_date, end_date)
+        comparison = self.get_period_comparison(start_date, end_date)
+        category_breakdown = self.get_category_breakdown(start_date, end_date, type_filter='expense')
+        
+        # Insight: Spending increased significantly
+        if comparison['expenses_change'] > 10:
+            insights.append({
+                'type': 'warning',
+                'title': 'Spending increased',
+                'message': f'Your expenses are {comparison["expenses_change"]}% higher than the previous period.'
+            })
+        
+        # Insight: Savings rate improved
+        current_rate = self.get_savings_rate(start_date, end_date)
+        if current_rate > 20:
+            insights.append({
+                'type': 'positive',
+                'title': 'Strong savings rate',
+                'message': f'Your savings rate is {current_rate}%, which is excellent.'
+            })
+        
+        # Insight: Category above average
+        if category_breakdown['expense']:
+            total_expenses = sum(item['amount'] for item in category_breakdown['expense'])
+            for cat in category_breakdown['expense']:
+                percentage = (cat['amount'] / total_expenses * 100) if total_expenses > 0 else 0
+                if percentage > 30:
+                    insights.append({
+                        'type': 'warning',
+                        'title': f'{cat["category"]} spending is high',
+                        'message': f'{cat["category"]} accounts for {round(percentage, 1)}% of your expenses.'
+                    })
+                    break  # Only show one high category insight
+        
+        # Insight: Net savings declined
+        if comparison['savings_change'] < -10:
+            insights.append({
+                'type': 'warning',
+                'title': 'Savings declined',
+                'message': f'Your net savings decreased by {abs(comparison["savings_change"])}% compared to the previous period.'
+            })
+        
+        # Insight: Positive trend
+        if comparison['income_change'] > 0 and comparison['expenses_change'] < 0:
+            insights.append({
+                'type': 'positive',
+                'title': 'Positive trend',
+                'message': f'Income increased by {comparison["income_change"]}% while expenses decreased by {abs(comparison["expenses_change"])}%.'
+            })
+        
+        return insights[:5]  # Limit to 5 insights
+    
     def get_projections(self) -> dict[str, float]:
         monthly = self.get_monthly_trends(6)
         if len(monthly) < 2:
@@ -280,6 +371,8 @@ class FinanceAnalytics:
         on_track = projected_total >= float(goal.target_amount) * 0.9
         shortfall = max(0, float(goal.target_amount) - projected_total)
         
+        monthly_shortfall = max(0, required_monthly - actual_monthly) if months_elapsed > 0 else 0
+        
         return {
             'saved': round(saved, 2),
             'target': float(goal.target_amount),
@@ -289,7 +382,8 @@ class FinanceAnalytics:
             'required_monthly': round(required_monthly, 2),
             'actual_monthly': round(actual_monthly, 2),
             'on_track': on_track,
-            'shortfall': round(shortfall, 2)
+            'shortfall': round(shortfall, 2),
+            'monthly_shortfall': round(monthly_shortfall, 2)
         }
     
     def get_monthly_chart_data(self, months: int = 12) -> dict[str, list[str | float]]:

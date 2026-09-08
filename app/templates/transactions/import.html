@@ -1,114 +1,125 @@
 {% extends "base.html" %}
 
-{% block title %}Import CSV - Finance Tracker{% endblock %}
+{% block title %}Import CSV - Ledger{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto">
-    <header class="mb-8">
-        <h1 class="page-title">Import Transactions</h1>
-        <p class="font-ui text-body text-ink-soft mt-2">Upload a CSV file with your bank transactions. The file must contain columns for date, description, and amount.</p>
+<div class="form-page">
+    <header class="form-page-header">
+        <h1 class="display-large">Import Transactions</h1>
+        <p class="import-subtitle">Upload a CSV file with your bank transactions to add them to your ledger.</p>
     </header>
 
-    <div class="card space-y-6">
-        <form method="POST" enctype="multipart/form-data" class="space-y-6">
-            {{ form.csrf_token }}
-            
-            <div>
-                <label for="{{ form.csv_file.id }}" class="label-field">CSV File</label>
-                <div class="border-2 border-stone-light rounded-lg p-6 text-center hover:border-ledger-green transition-colors {% if form.csv_file.errors %}border-brick bg-brick/5{% endif %}">
-                    <svg class="w-12 h-12 mx-auto text-stone mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    <p class="font-ui text-body text-ink mb-1">Drag and drop a CSV file here, or click to select</p>
-                    <p class="font-ui text-body-sm text-ink-soft">Maximum file size: 2MB</p>
-                    {{ form.csv_file(class="sr-only", id="csv-file-input") }}
+    <section class="import-section">
+        <div class="form-card">
+            <form method="POST" enctype="multipart/form-data" class="import-form">
+                {{ form.csrf_token }}
+                
+                <div class="file-upload-area" id="dropZone">
+                    <div class="file-upload-content">
+                        <svg class="file-upload-icon" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                        <p class="file-upload-text">Drag and drop a CSV file here, or click to select</p>
+                        <p class="file-upload-subtext">Maximum file size: 2MB • .csv files only</p>
+                        {{ form.csv_file(class="file-input", id="csv-file-input") }}
+                    </div>
                 </div>
+                
                 {% if form.csv_file.errors %}
-                <p class="error-message mt-1">{{ form.csv_file.errors[0] }}</p>
-                {% endif %}
-            </div>
-
-            <div class="bg-stone-light/50 rounded-lg p-4">
-                <h3 class="font-ui font-medium text-ink mb-3">Expected CSV Format</h3>
-                <div class="overflow-x-auto">
-                    <table class="data-table text-sm">
-                        <thead>
-                            <tr>
-                                <th scope="col">date</th>
-                                <th scope="col">description</th>
-                                <th scope="col">amount</th>
-                                <th scope="col">type (optional)</th>
-                                <th scope="col">category (optional)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="font-mono text-monetary-sm">2024-01-15</td>
-                                <td class="font-ui text-body">Grocery Store</td>
-                                <td class="font-mono text-monetary-sm">45.67</td>
-                                <td class="font-ui text-body-sm">expense</td>
-                                <td class="font-ui text-body-sm">Food</td>
-                            </tr>
-                            <tr>
-                                <td class="font-mono text-monetary-sm">2024-01-10</td>
-                                <td class="font-ui text-body">Salary Deposit</td>
-                                <td class="font-mono text-monetary-sm">3000.00</td>
-                                <td class="font-ui text-body-sm">income</td>
-                                <td class="font-ui text-body-sm">Salary</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="error-message">
+                    {{ form.csv_file.errors[0] }}
                 </div>
-                <ul class="font-ui text-body-sm text-ink-soft mt-3 space-y-1">
-                    <li>• Date format: YYYY-MM-DD (ISO format recommended)</li>
-                    <li>• Amount should be positive (type determines income/expense)</li>
-                    <li>• If type is omitted, defaults to "expense"</li>
-                    <li>• Categories must match existing categories (case-insensitive)</li>
-                    <li>• Duplicate transactions (same date, amount, description) will be skipped</li>
-                </ul>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-stone-light">
-                <button type="submit" class="btn-primary flex-1 sm:flex-none">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                    Import Transactions
-                </button>
-                <a href="{{ url_for('transactions.index') }}" class="btn-secondary flex-1 sm:flex-none text-center">Cancel</a>
-            </div>
-        </form>
-    </div>
+                {% endif %}
+                
+                <div class="format-instructions">
+                    <h3 class="format-title">Expected CSV Format</h3>
+                    <div class="format-table-wrapper">
+                        <table class="format-table">
+                            <thead>
+                                <tr>
+                                    <th>date</th>
+                                    <th>description</th>
+                                    <th>amount</th>
+                                    <th>type (optional)</th>
+                                    <th>category (optional)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="format-mono">2024-01-15</td>
+                                    <td>Grocery Store</td>
+                                    <td class="format-mono">45.67</td>
+                                    <td>expense</td>
+                                    <td>Food</td>
+                                </tr>
+                                <tr>
+                                    <td class="format-mono">2024-01-10</td>
+                                    <td>Salary Deposit</td>
+                                    <td class="format-mono">3000.00</td>
+                                    <td>income</td>
+                                    <td>Salary</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <ul class="format-notes">
+                        <li>Date format: YYYY-MM-DD (ISO format recommended)</li>
+                        <li>Amount should be positive (type determines income/expense)</li>
+                        <li>If type is omitted, defaults to "expense"</li>
+                        <li>Categories must match existing categories (case-insensitive)</li>
+                        <li>Duplicate transactions (same date, amount, description) will be skipped</li>
+                    </ul>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        <span>Import Transactions</span>
+                    </button>
+                    <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </section>
 </div>
 
-{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const dropZone = document.querySelector('.border-2');
+    const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('csv-file-input');
+    const fileUploadText = document.querySelector('.file-upload-text');
     
     if (dropZone && fileInput) {
         dropZone.addEventListener('click', () => fileInput.click());
         
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropZone.classList.add('border-ledger-green', 'bg-ledger-green/5');
+            dropZone.classList.add('dragover');
         });
         
         dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('border-ledger-green', 'bg-ledger-green/5');
+            dropZone.classList.remove('dragover');
         });
         
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropZone.classList.remove('border-ledger-green', 'bg-ledger-green/5');
+            dropZone.classList.remove('dragover');
+            
             if (e.dataTransfer.files.length) {
                 fileInput.files = e.dataTransfer.files;
-                dropZone.querySelector('p').textContent = e.dataTransfer.files[0].name;
+                updateFileName(e.dataTransfer.files[0].name);
             }
         });
         
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length) {
-                dropZone.querySelector('p').textContent = fileInput.files[0].name;
+                updateFileName(fileInput.files[0].name);
             }
         });
+    }
+    
+    function updateFileName(fileName) {
+        if (fileUploadText) {
+            fileUploadText.textContent = fileName;
+        }
     }
 });
 </script>

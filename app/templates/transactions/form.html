@@ -3,75 +3,74 @@
 {% block title %}{{ title }} - Finance Tracker{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto">
-    <header class="mb-8">
-        <h1 class="page-title">{{ title }}</h1>
+<div class="form-page">
+    <header class="form-page-header">
+        <h1 class="display-large">{{ title }}</h1>
     </header>
 
-    <form method="POST" class="card space-y-6" novalidate>
+    <form method="POST" class="form-card" novalidate>
         {{ form.csrf_token }}
         
-        <div>
-            <label for="{{ form.type.id }}" class="label-field">Type</label>
-            <div class="grid grid-cols-2 gap-3">
+        <div class="form-field">
+            <label class="form-label">Type</label>
+            <div class="type-selector">
                 {% for value, label in form.type.choices %}
-                <label class="relative flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-120 
-                    {% if form.type.data == value %}border-ledger-green bg-ledger-green/5{% elif form.type.data is none and value == 'income' %}border-ledger-green bg-ledger-green/5{% else %}border-stone-light hover:bg-stone-light/50{% endif %}">
-                    <input type="radio" name="{{ form.type.name }}" value="{{ value }}" class="sr-only" {% if form.type.data == value or (form.type.data is none and value == 'income') %}checked{% endif %}>
-                    <div class="flex flex-col items-center">
-                        <svg class="w-6 h-6 mb-1 {% if value == 'income' %}text-ledger-green{% else %}text-brick{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <label class="type-option {% if form.type.data == value or (form.type.data is none and value == 'income') %}type-option-selected{% endif %}">
+                    <input type="radio" name="{{ form.type.name }}" value="{{ value }}" class="type-input" {% if form.type.data == value or (form.type.data is none and value == 'income') %}checked{% endif %}>
+                    <div class="type-option-content">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             {% if value == 'income' %}
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             {% else %}
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                             {% endif %}
                         </svg>
-                        <span class="font-ui font-medium text-ink">{{ label }}</span>
+                        <span>{{ label }}</span>
                     </div>
                 </label>
                 {% endfor %}
             </div>
             {% if form.type.errors %}
-            <p class="error-message mt-1">{{ form.type.errors[0] }}</p>
+            <p class="form-error">{{ form.type.errors[0] }}</p>
             {% endif %}
         </div>
 
-        <div>
-            <label for="{{ form.category.id }}" class="label-field">Category</label>
-            {{ form.category(class="input-field" + (" error" if form.category.errors else "")) }}
+        <div class="form-field">
+            <label for="{{ form.category.id }}" class="form-label">Category</label>
+            {{ form.category(class="form-input" + (" form-input-error" if form.category.errors else "")) }}
             {% if form.category.errors %}
-            <p class="error-message mt-1">{{ form.category.errors[0] }}</p>
+            <p class="form-error">{{ form.category.errors[0] }}</p>
             {% endif %}
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label for="{{ form.amount.id }}" class="label-field">Amount ($)</label>
-                {{ form.amount(class="input-field input-field-mono" + (" error" if form.amount.errors else ""), placeholder="0.00") }}
+        <div class="form-field-row">
+            <div class="form-field">
+                <label for="{{ form.amount.id }}" class="form-label">Amount ($)</label>
+                {{ form.amount(class="form-input form-input-money" + (" form-input-error" if form.amount.errors else ""), placeholder="0.00") }}
                 {% if form.amount.errors %}
-                <p class="error-message mt-1">{{ form.amount.errors[0] }}</p>
+                <p class="form-error">{{ form.amount.errors[0] }}</p>
                 {% endif %}
             </div>
-            <div>
-                <label for="{{ form.date.id }}" class="label-field">Date</label>
-                {{ form.date(class="input-field" + (" error" if form.date.errors else "")) }}
+            <div class="form-field">
+                <label for="{{ form.date.id }}" class="form-label">Date</label>
+                {{ form.date(class="form-input" + (" form-input-error" if form.date.errors else "")) }}
                 {% if form.date.errors %}
-                <p class="error-message mt-1">{{ form.date.errors[0] }}</p>
+                <p class="form-error">{{ form.date.errors[0] }}</p>
                 {% endif %}
             </div>
         </div>
 
-        <div>
-            <label for="{{ form.description.id }}" class="label-field">Description (optional)</label>
-            {{ form.description(class="input-field" + (" error" if form.description.errors else ""), placeholder="e.g., Grocery shopping, Salary deposit") }}
+        <div class="form-field">
+            <label for="{{ form.description.id }}" class="form-label">Description (optional)</label>
+            {{ form.description(class="form-input" + (" form-input-error" if form.description.errors else ""), placeholder="e.g., Grocery shopping, Salary deposit") }}
             {% if form.description.errors %}
-            <p class="error-message mt-1">{{ form.description.errors[0] }}</p>
+            <p class="form-error">{{ form.description.errors[0] }}</p>
             {% endif %}
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-stone-light">
-            <button type="submit" class="btn-primary flex-1 sm:flex-none">Save Transaction</button>
-            <a href="{{ url_for('transactions.index') }}" class="btn-secondary flex-1 sm:flex-none text-center">Cancel</a>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Transaction</button>
+            <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>

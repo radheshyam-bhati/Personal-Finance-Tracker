@@ -10,7 +10,36 @@ from app.analytics.services import FinanceAnalytics
 @login_required
 def index():
     categories = Category.query.filter_by(user_id=current_user.id).order_by(Category.name).all()
-    return render_template('categorization/index.html', categories=categories)
+    
+    # Get uncategorized transaction count
+    uncategorized_count = Transaction.query.filter(
+        Transaction.user_id == current_user.id,
+        (Transaction.category_id.is_(None)) | (Transaction.category.has(Category.name == 'Uncategorized'))
+    ).count()
+    
+    # Get category spending data
+    analytics = FinanceAnalytics(current_user.id)
+    category_breakdown = analytics.get_category_breakdown(type_filter='expense')
+    
+    # Build category spending map
+    category_spending = {}
+    total_expenses = sum(item['amount'] for item in category_breakdown['expense'])
+    
+    for item in category_breakdown['expense']:
+        category_spending[item['category']] = {
+            'amount': item['amount'],
+            'percentage': round((item['amount'] / total_expenses * 100), 1) if total_expenses > 0 else 0
+        }
+    
+    # Get automation rules
+    rules = CategoryRule.query.filter_by(user_id=current_user.id).join(Category).order_by(Category.name, CategoryRule.keyword).limit(10).all()
+    
+    return render_template('categorization/index.html', 
+                         categories=categories, 
+                         uncategorized_count=uncategorized_count,
+                         category_spending=category_spending,
+                         total_expenses=total_expenses,
+                         rules=rules)
 
 @categorization_bp.route('/create', methods=['GET', 'POST'])
 @login_required

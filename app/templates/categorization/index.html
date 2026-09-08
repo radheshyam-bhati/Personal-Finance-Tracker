@@ -1,74 +1,108 @@
 {% extends "base.html" %}
 
-{% block title %}Categories - Finance Tracker{% endblock %}
+{% block title %}Categories - Ledger{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 class="page-title">Categories</h1>
-        <a href="{{ url_for('categorization.create_category') }}" class="btn-primary">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            Create Category
+<div class="categories-page">
+    <!-- Page Header -->
+    <header class="categories-header">
+        <div class="categories-header-text">
+            <h1 class="display-large">Categories</h1>
+            <p class="body-default">Organize spending and improve automatic categorization.</p>
+        </div>
+        <a href="{{ url_for('categorization.create_category') }}" class="btn btn-primary">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>Add Category</span>
         </a>
     </header>
 
-    <section class="card" aria-labelledby="categories-heading">
-        <h2 id="categories-heading" class="card-title">Your Categories</h2>
-        {% if categories %}
-        <div class="overflow-x-auto">
-            <table class="data-table" role="table">
-                <thead>
-                    <tr>
-                        <th scope="col">Name</th>
-                        <th scope="col">Type</th>
-                        <th scope="col">Default</th>
-                        <th scope="col"><span class="sr-only">Actions</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for cat in categories %}
-                    <tr>
-                        <td class="font-ui text-body font-medium">{{ cat.name }}</td>
-                        <td>
-                            {% if cat.name in ['Salary', 'Freelance', 'Investments', 'Gifts', 'Other Income'] %}
-                            <span class="badge badge-income">Income</span>
-                            {% else %}
-                            <span class="badge badge-expense">Expense</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if cat.is_default %}
-                            <span class="badge bg-brass/10 text-brass">Yes</span>
-                            {% else %}
-                            <span class="badge bg-stone-light text-stone">No</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="flex items-center justify-end space-x-2">
-                                {% if not cat.is_default %}
-                                <a href="{{ url_for('categorization.edit_category', category_id=cat.id) }}" class="p-2 text-ink-soft hover:text-ledger-green hover:bg-stone-light rounded-lg transition-colors" aria-label="Edit category">✏️</a>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Uncategorized Review Section -->
+    {% if uncategorized_count > 0 %}
+    <section class="uncategorized-review">
+        <div class="uncategorized-content">
+            <div class="uncategorized-info">
+                <h3 class="uncategorized-title">Uncategorized</h3>
+                <p class="uncategorized-count">{{ uncategorized_count }} transaction{{ 's' if uncategorized_count != 1 else '' }} need review</p>
+            </div>
+            <a href="{{ url_for('categorization.review') }}" class="btn btn-secondary">Review transactions →</a>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Category Overview Section -->
+    <section class="category-overview-section">
+        <h2 class="section-title">Category Overview</h2>
+        {% if categories and category_spending %}
+        <div class="category-list">
+            {% for cat in categories %}
+            {% if cat.name not in ['Salary', 'Freelance', 'Investments', 'Gifts', 'Other Income'] and cat.name != 'Uncategorized' %}
+            {% set spending = category_spending.get(cat.name, {'amount': 0, 'percentage': 0}) %}
+            {% if spending.amount > 0 %}
+            <div class="category-item">
+                <div class="category-item-main">
+                    <h3 class="category-name">{{ cat.name }}</h3>
+                    <p class="category-amount monetary-default">₹{{ "{:,.0f}".format(spending.amount) }}</p>
+                </div>
+                <p class="category-percentage">{{ spending.percentage }}% of expenses</p>
+            </div>
+            {% endif %}
+            {% endif %}
+            {% endfor %}
         </div>
         {% else %}
-        <p class="font-ui text-body text-ink-soft text-center py-8">No categories found.</p>
+        <div class="categories-empty-state">
+            <h3 class="display-small">No spending data yet</h3>
+            <p class="body-default">Categories will show spending breakdown once you have transactions.</p>
+        </div>
         {% endif %}
     </section>
 
-    <div class="flex justify-center space-x-3 mt-6">
-        <a href="{{ url_for('categorization.rules') }}" class="btn-secondary">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-            Manage Rules
-        </a>
-        <a href="{{ url_for('categorization.review') }}" class="btn-secondary">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-            Review Uncategorized
-        </a>
-    </div>
+    <!-- Automation Rules Section -->
+    <section class="automation-rules-section">
+        <div class="section-header">
+            <h2 class="section-title">Automatic categorization rules</h2>
+            <a href="{{ url_for('categorization.create_rule') }}" class="btn btn-secondary btn-sm">Add rule</a>
+        </div>
+        
+        <p class="section-description">Rules help categorize new transactions automatically.</p>
+        
+        {% if rules %}
+        <div class="rules-list">
+            {% for rule in rules %}
+            <div class="rule-item">
+                <div class="rule-content">
+                    <span class="rule-keyword">"{{ rule.keyword }}"</span>
+                    <span class="rule-arrow">→</span>
+                    <span class="rule-category">{{ rule.category.name if rule.category else 'Deleted' }}</span>
+                </div>
+                <div class="rule-actions">
+                    <a href="{{ url_for('categorization.edit_rule', rule_id=rule.id) }}" class="rule-action-link">Edit</a>
+                    <form action="{{ url_for('categorization.delete_rule', rule_id=rule.id) }}" method="POST" onsubmit="return confirm('Delete this rule?');" class="rule-action-form">
+                        <button type="submit" class="rule-action-link rule-action-delete">Delete</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('categorization.rules') }}" class="view-all-rules">View all rules →</a>
+        {% else %}
+        <div class="rules-empty-state">
+            <p class="body-default">No automation rules yet. Create rules to automatically categorize transactions based on keywords.</p>
+            <a href="{{ url_for('categorization.create_rule') }}" class="btn btn-secondary">Create Rule</a>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Complete Empty State -->
+    {% if not categories and not rules %}
+    <section class="categories-complete-empty">
+        <h3 class="display-small">No categories or rules yet</h3>
+        <p class="body-default">Categories help you organize spending and track where your money goes. Automation rules automatically categorize transactions based on keywords.</p>
+        <div class="empty-state-actions">
+            <a href="{{ url_for('categorization.create_category') }}" class="btn btn-primary">Create Category</a>
+            <a href="{{ url_for('categorization.create_rule') }}" class="btn btn-secondary">Create Rule</a>
+        </div>
+    </section>
+    {% endif %}
 </div>
 {% endblock %}
