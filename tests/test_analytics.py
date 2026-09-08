@@ -98,9 +98,10 @@ class TestGoalProgress:
     
     def test_goal_progress_with_no_transactions(self, app, sample_user):
         """Test goal progress returns zeros when no transactions in period."""
+        from app import db
+        from app.models import Goal
+        
         with app.app_context():
-            from app.models import Goal
-            
             start_date = date.today()
             target_date = date.today() + timedelta(days=365)
             
@@ -123,9 +124,10 @@ class TestGoalProgress:
     
     def test_goal_progress_calculation(self, app, sample_user):
         """Test goal progress calculates correctly."""
+        from app import db
+        from app.models import Goal, Transaction
+        
         with app.app_context():
-            from app.models import Goal, Transaction
-            
             start_date = date.today().replace(day=1)
             target_date = date.today().replace(day=28) + timedelta(days=30)
             
