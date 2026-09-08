@@ -6,8 +6,13 @@ from datetime import date
 class TestTransactionIndex:
     """Tests for the transaction index route."""
     
-    def test_transactions_page_loads(self, logged_in_client):
-        """Test that the transactions page loads."""
+    def test_transactions_page_requires_login(self, client):
+        """Test that transactions page requires authentication."""
+        response = client.get('/transactions', follow_redirects=False)
+        assert response.status_code == 302
+    
+    def test_transactions_page_loads_for_authenticated_user(self, logged_in_client):
+        """Test that the transactions page loads for authenticated users."""
         response = logged_in_client.get('/transactions')
         assert response.status_code == 200
         assert b'Transactions' in response.data
@@ -57,6 +62,8 @@ class TestTransactionModel:
     
     def test_transaction_creation(self, app, sample_user):
         """Test creating a transaction."""
+        from app import db
+        
         with app.app_context():
             from app.models import Transaction
             
@@ -67,7 +74,10 @@ class TestTransactionModel:
                 amount=1000.00,
                 date=date.today(),
                 description='Salary',
-                source='manual'
+                source='manual',
+                dedup_hash=Transaction.compute_dedup_hash(
+                    sample_user.id, date.today(), 1000.00, 'Salary'
+                )
             )
             db.session.add(transaction)
             db.session.commit()
@@ -107,8 +117,12 @@ class TestTransactionModel:
     
     def test_transaction_type_constraint(self, app, sample_user):
         """Test that transaction type must be income or expense."""
+        from app import db
+        
         with app.app_context():
             from app.models import Transaction
+            
+            today = date.today()
             
             # Valid types should work
             t1 = Transaction(
@@ -116,8 +130,11 @@ class TestTransactionModel:
                 type='income',
                 category_id=1,
                 amount=100.00,
-                date=date.today(),
-                description='Test'
+                date=today,
+                description='Test',
+                dedup_hash=Transaction.compute_dedup_hash(
+                    sample_user.id, today, 100.00, 'Test'
+                )
             )
             db.session.add(t1)
             db.session.commit()
@@ -127,8 +144,11 @@ class TestTransactionModel:
                 type='expense',
                 category_id=1,
                 amount=50.00,
-                date=date.today(),
-                description='Test'
+                date=today,
+                description='Test 2',
+                dedup_hash=Transaction.compute_dedup_hash(
+                    sample_user.id, today, 50.00, 'Test 2'
+                )
             )
             db.session.add(t2)
             db.session.commit()

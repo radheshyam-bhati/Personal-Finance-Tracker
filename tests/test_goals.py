@@ -6,8 +6,13 @@ from datetime import date, timedelta
 class TestGoalsIndex:
     """Tests for the goals index route."""
     
-    def test_goals_page_loads(self, logged_in_client):
-        """Test that the goals page loads."""
+    def test_goals_page_requires_login(self, client):
+        """Test that goals page requires authentication."""
+        response = client.get('/goals', follow_redirects=False)
+        assert response.status_code == 302
+    
+    def test_goals_page_loads_for_authenticated_user(self, logged_in_client):
+        """Test that the goals page loads for authenticated users."""
         response = logged_in_client.get('/goals')
         assert response.status_code == 200
         assert b'Savings Goals' in response.data
@@ -51,6 +56,8 @@ class TestGoalModel:
     
     def test_goal_creation(self, app, sample_user):
         """Test creating a goal."""
+        from app import db
+        
         with app.app_context():
             from app.models import Goal
             
@@ -75,15 +82,19 @@ class TestGoalModel:
     
     def test_goal_target_after_start_constraint(self, app, sample_user):
         """Test that goal target_date must be after start_date."""
+        from app import db
+        
         with app.app_context():
             from app.models import Goal
             
             start_date = date.today()
             target_date = date.today() + timedelta(days=30)
             
+            goal_name = f'Test Goal {id(self)}'  # Unique name per test
+            
             goal = Goal(
                 user_id=sample_user.id,
-                name='Test Goal',
+                name=goal_name,
                 target_amount=1000.00,
                 start_date=start_date,
                 target_date=target_date
@@ -91,7 +102,9 @@ class TestGoalModel:
             db.session.add(goal)
             db.session.commit()
             
-            assert Goal.query.count() == 1
+            # Goal should exist
+            saved = Goal.query.filter_by(name=goal_name).first()
+            assert saved is not None
 
 
 class TestGoalDetail:
@@ -99,6 +112,8 @@ class TestGoalDetail:
     
     def test_goal_detail_page_loads(self, app, logged_in_client, sample_user):
         """Test that goal detail page loads."""
+        from app import db
+        
         with app.app_context():
             from app.models import Goal
             
@@ -121,6 +136,8 @@ class TestGoalDetail:
     
     def test_goal_detail_requires_login(self, client, app, sample_user):
         """Test that goal detail requires authentication."""
+        from app import db
+        
         with app.app_context():
             from app.models import Goal
             

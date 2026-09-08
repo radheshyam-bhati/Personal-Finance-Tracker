@@ -18,10 +18,14 @@ class TestFinanceAnalytics:
             assert summary['net_savings'] == 0
             assert summary['transaction_count'] == 0
     
-    def test_summary_with_transactions(self, app, sample_user, sample_transaction):
+    def test_summary_with_transactions(self, app, sample_user):
         """Test summary calculates correctly with transactions."""
+        from app import db
+        
         with app.app_context():
             from app.models import Transaction
+            
+            today = date.today()
             
             # Add an income transaction
             income = Transaction(
@@ -29,9 +33,12 @@ class TestFinanceAnalytics:
                 type='income',
                 category_id=1,
                 amount=2000.00,
-                date=date.today(),
+                date=today,
                 description='Salary',
-                source='manual'
+                source='manual',
+                dedup_hash=Transaction.compute_dedup_hash(
+                    sample_user.id, today, 2000.00, 'Salary'
+                )
             )
             db.session.add(income)
             db.session.commit()
@@ -40,6 +47,7 @@ class TestFinanceAnalytics:
             summary = analytics.get_summary()
             
             assert summary['total_income'] == 2000.00
+            # Net savings = income - expenses (expense from fixture = 50)
             assert summary['net_savings'] == 2000.00 - 50.00  # 1950.00
     
     def test_monthly_trends_empty(self, app, sample_user):

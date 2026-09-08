@@ -58,14 +58,22 @@ def client(app):
 
 
 @pytest.fixture
-def logged_in_client(client, app):
+def logged_in_client(app):
     """A test client with a logged-in user."""
-    with app.app_context():
-        user = User.query.filter_by(email='test@example.com').first()
-        with client.session_transaction() as sess:
-            sess['_user_id'] = str(user.id)
-            sess['_fresh'] = True
-    return client
+    # Create a fresh test client for each test
+    with app.test_client() as test_client:
+        with app.app_context():
+            user = User.query.filter_by(email='test@example.com').first()
+            
+            # Use session transaction to set user directly (bypasses login form)
+            with test_client.session_transaction() as sess:
+                from flask import session
+                sess['_user_id'] = str(user.id)
+                sess['_fresh'] = True
+                sess['_id'] = 'test-session-id'
+                sess.modified = True
+        
+        yield test_client
 
 
 @pytest.fixture
