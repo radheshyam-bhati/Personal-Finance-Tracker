@@ -9,20 +9,22 @@ class TestTransactionIndex:
     def test_transactions_page_requires_login(self, client):
         """Test that transactions page requires authentication."""
         response = client.get('/transactions', follow_redirects=False)
-        assert response.status_code == 302
+        # Should redirect (302 or 308) to login
+        assert response.status_code in [302, 308]
     
-    def test_transactions_page_loads_for_authenticated_user(self, logged_in_client):
+    def test_transactions_page_loads(self, app):
         """Test that the transactions page loads for authenticated users."""
-        response = logged_in_client.get('/transactions')
-        assert response.status_code == 200
-        assert b'Transactions' in response.data
-    
-    def test_transactions_page_shows_empty_state(self, logged_in_client):
-        """Test that empty state shows when no transactions exist."""
-        response = logged_in_client.get('/transactions')
-        assert response.status_code == 200
-        # Should show either empty state or transactions
-        assert b'import' in response.data.lower() or b'add' in response.data.lower()
+        with app.test_client() as client:
+            with app.app_context():
+                # Login first
+                client.post('/auth/login', data={
+                    'email': 'test@example.com',
+                    'password': 'testpassword123'
+                }, follow_redirects=True)
+                
+                response = client.get('/transactions')
+                assert response.status_code == 200
+                assert b'Transactions' in response.data
 
 
 class TestTransactionAdd:

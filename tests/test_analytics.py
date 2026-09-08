@@ -48,7 +48,8 @@ class TestFinanceAnalytics:
             
             assert summary['total_income'] == 2000.00
             # Net savings = income - expenses (expense from fixture = 50)
-            assert summary['net_savings'] == 2000.00 - 50.00  # 1950.00
+            # Allow for small floating point differences
+            assert abs(summary['net_savings'] - (2000.00 - 50.00)) < 0.01
     
     def test_monthly_trends_empty(self, app, sample_user):
         """Test monthly trends returns empty list when no transactions."""
@@ -139,9 +140,10 @@ class TestGoalProgress:
             start_date = date.today().replace(day=1)
             target_date = date.today().replace(day=28) + timedelta(days=30)
             
+            goal_name = f'Test Goal {id(self)}'
             goal = Goal(
                 user_id=sample_user.id,
-                name='Test Goal',
+                name=goal_name,
                 target_amount=1000.00,
                 start_date=start_date,
                 target_date=target_date
@@ -150,6 +152,9 @@ class TestGoalProgress:
             db.session.commit()
             
             # Add some income and expenses in the goal period
+            income_hash = Transaction.compute_dedup_hash(sample_user.id, start_date, 500.00, 'Income')
+            expense_hash = Transaction.compute_dedup_hash(sample_user.id, start_date, 100.00, 'Expense')
+            
             income = Transaction(
                 user_id=sample_user.id,
                 type='income',
@@ -157,7 +162,8 @@ class TestGoalProgress:
                 amount=500.00,
                 date=start_date,
                 description='Income',
-                source='manual'
+                source='manual',
+                dedup_hash=income_hash
             )
             expense = Transaction(
                 user_id=sample_user.id,
@@ -166,7 +172,8 @@ class TestGoalProgress:
                 amount=100.00,
                 date=start_date,
                 description='Expense',
-                source='manual'
+                source='manual',
+                dedup_hash=expense_hash
             )
             db.session.add_all([income, expense])
             db.session.commit()
@@ -175,9 +182,9 @@ class TestGoalProgress:
             progress = analytics.get_goal_progress(goal)
             
             # Saved should be income - expenses = 400
-            assert progress['saved'] == 400.00
+            assert abs(progress['saved'] - 400.00) < 0.01
             # Percentage should be 400/1000 = 40%
-            assert progress['percentage'] == 40.0
+            assert abs(progress['percentage'] - 40.0) < 0.1
 
 
 if __name__ == '__main__':

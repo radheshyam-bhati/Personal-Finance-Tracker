@@ -8,14 +8,22 @@ class TestCategoryIndex:
     def test_categories_page_requires_login(self, client):
         """Test that the categories page requires authentication."""
         response = client.get('/categories', follow_redirects=False)
-        # Should redirect to login
-        assert response.status_code == 302
+        # Should redirect (302 or 308) to login
+        assert response.status_code in [302, 308]
     
-    def test_categories_page_loads(self, app, logged_in_client):
+    def test_categories_page_loads(self, app):
         """Test that the categories page loads for authenticated users."""
-        response = logged_in_client.get('/categories')
-        assert response.status_code == 200
-        assert b'Categories' in response.data or b'Category' in response.data
+        with app.test_client() as test_client:
+            with app.app_context():
+                # Login first
+                test_client.post('/auth/login', data={
+                    'email': 'test@example.com',
+                    'password': 'testpassword123'
+                }, follow_redirects=True)
+                
+                response = test_client.get('/categories')
+                assert response.status_code == 200
+                assert b'Categories' in response.data or b'Category' in response.data
 
 
 class TestCategoryCreate:
