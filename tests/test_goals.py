@@ -12,19 +12,11 @@ class TestGoalsIndex:
         # Should redirect (302 or 308) to login
         assert response.status_code in [302, 308]
     
-    def test_goals_page_loads(self, app):
+    def test_goals_page_loads(self, app, logged_in_client):
         """Test that the goals page loads for authenticated users."""
-        with app.test_client() as client:
-            with app.app_context():
-                # Login first
-                client.post('/auth/login', data={
-                    'email': 'test@example.com',
-                    'password': 'testpassword123'
-                }, follow_redirects=True)
-                
-                response = client.get('/goals')
-                assert response.status_code == 200
-                assert b'Savings Goals' in response.data or b'Goal' in response.data
+        response = logged_in_client.get('/goals')
+        assert response.status_code == 200
+        assert b'Savings Goals' in response.data or b'Goal' in response.data
 
 
 class TestGoalCreate:

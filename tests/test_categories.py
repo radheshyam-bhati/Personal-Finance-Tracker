@@ -11,19 +11,11 @@ class TestCategoryIndex:
         # Should redirect (302 or 308) to login
         assert response.status_code in [302, 308]
     
-    def test_categories_page_loads(self, app):
+    def test_categories_page_loads(self, app, logged_in_client):
         """Test that the categories page loads for authenticated users."""
-        with app.test_client() as test_client:
-            with app.app_context():
-                # Login first
-                test_client.post('/auth/login', data={
-                    'email': 'test@example.com',
-                    'password': 'testpassword123'
-                }, follow_redirects=True)
-                
-                response = test_client.get('/categories')
-                assert response.status_code == 200
-                assert b'Categories' in response.data or b'Category' in response.data
+        response = logged_in_client.get('/categories')
+        assert response.status_code == 200
+        assert b'Categories' in response.data or b'Category' in response.data
 
 
 class TestCategoryCreate:

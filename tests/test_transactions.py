@@ -12,19 +12,11 @@ class TestTransactionIndex:
         # Should redirect (302 or 308) to login
         assert response.status_code in [302, 308]
     
-    def test_transactions_page_loads(self, app):
+    def test_transactions_page_loads(self, app, logged_in_client):
         """Test that the transactions page loads for authenticated users."""
-        with app.test_client() as client:
-            with app.app_context():
-                # Login first
-                client.post('/auth/login', data={
-                    'email': 'test@example.com',
-                    'password': 'testpassword123'
-                }, follow_redirects=True)
-                
-                response = client.get('/transactions')
-                assert response.status_code == 200
-                assert b'Transactions' in response.data
+        response = logged_in_client.get('/transactions')
+        assert response.status_code == 200
+        assert b'Transactions' in response.data
 
 
 class TestTransactionAdd:

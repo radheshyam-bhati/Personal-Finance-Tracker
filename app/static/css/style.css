@@ -295,6 +295,12 @@ a:hover {
     background-color: var(--paper);
 }
 
+/* Auth Shell for unauthenticated pages */
+.auth-shell {
+    background-color: var(--paper);
+    min-height: 100vh;
+}
+
 /* Top Navigation Bar - Desktop */
 .topnav {
     height: var(--topnav-height);
@@ -508,6 +514,14 @@ a:hover {
     padding: var(--space-8) var(--space-6);
     max-width: calc(var(--max-content-width) - var(--sidebar-width));
     min-height: calc(100vh - var(--topnav-height));
+}
+
+/* Main Content for Unauthenticated Pages */
+.main-content-unauthenticated {
+    margin-left: 0;
+    padding: var(--space-8) var(--space-6);
+    max-width: 100%;
+    min-height: 100vh;
 }
 
 /* Container for centered content */
@@ -844,7 +858,6 @@ td {
     padding: var(--space-3) var(--space-4);
     border-bottom: var(--border-thin);
     color: var(--ink);
-    font-family: var(--font-sans);
 }
 
 tr:last-child td {
@@ -2726,6 +2739,11 @@ tr:hover td {
         padding-bottom: calc(var(--bottomnav-height) + var(--space-4));
     }
     
+    /* Unauthenticated pages on mobile */
+    .main-content-unauthenticated {
+        padding: var(--space-4);
+    }
+    
     /* Adjust topnav for mobile */
     .topnav {
         padding: 0 var(--space-4);
@@ -2761,5 +2779,37 @@ tr:hover td {
     
     .filter-bar .form-group {
         min-width: 100%;
+    }
+}
+
+/* ==========================================================================
+   PWA STYLES
+   ========================================================================== */
+
+/* PWA Install Button */
+.pwa-install-btn {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    z-index: 1001;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    animation: slideIn 0.3s ease;
+}
+
+@media (max-width: 767px) {
+    .pwa-install-btn {
+        bottom: 70px;
+        right: 16px;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
     }
 }

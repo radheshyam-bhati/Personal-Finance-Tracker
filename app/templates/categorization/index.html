@@ -78,6 +78,7 @@
                 <div class="rule-actions">
                     <a href="{{ url_for('categorization.edit_rule', rule_id=rule.id) }}" class="rule-action-link">Edit</a>
                     <form action="{{ url_for('categorization.delete_rule', rule_id=rule.id) }}" method="POST" onsubmit="return confirm('Delete this rule?');" class="rule-action-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="rule-action-link rule-action-delete">Delete</button>
                     </form>
                 </div>

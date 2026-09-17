@@ -60,4 +60,14 @@ def create_app(config_name=None):
         from datetime import datetime
         return {'now': datetime.now()}
     
+    # Serve service worker with proper headers
+    @app.route('/service-worker.js')
+    def serve_service_worker():
+        from flask import send_from_directory, Response
+        import os
+        response = send_from_directory(os.path.join(app.root_path, 'static', 'js'), 'service-worker.js')
+        response.headers['Service-Worker-Allowed'] = '/'
+        response.headers['Content-Type'] = 'application/javascript'
+        return response
+    
     return app

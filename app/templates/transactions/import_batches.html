@@ -41,6 +41,7 @@
             </div>
             <div class="import-batch-actions">
                 <form action="{{ url_for('transactions.undo_import', batch_id=batch.id) }}" method="POST" onsubmit="return confirm('Undo this import? This will delete all {{ batch.rows_imported }} transactions from this batch.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-danger btn-sm">
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
                         Undo Import

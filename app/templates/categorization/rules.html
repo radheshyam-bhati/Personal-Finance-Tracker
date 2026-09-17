@@ -41,6 +41,7 @@
                             <div class="flex items-center justify-end space-x-2">
                                 <a href="{{ url_for('categorization.edit_rule', rule_id=rule.id) }}" class="p-2 text-ink-soft hover:text-ledger-green hover:bg-stone-light rounded-lg transition-colors" aria-label="Edit rule">✏️</a>
                                 <form action="{{ url_for('categorization.delete_rule', rule_id=rule.id) }}" method="POST" onsubmit="return confirm('Delete this rule?');" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="p-2 text-ink-soft hover:text-brick hover:bg-stone-light rounded-lg transition-colors" aria-label="Delete rule">🗑️</button>
                                 </form>
                             </div>
@@ -59,6 +60,7 @@
         <h3 class="font-ui font-medium text-ledger-green mb-2">Auto-Categorize Existing Transactions</h3>
         <p class="font-ui text-body-sm text-ink-soft mb-4">Apply all rules to existing uncategorized transactions.</p>
         <form action="{{ url_for('categorization.auto_categorize') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn-primary">Auto-Categorize All</button>
         </form>
     </div>
